@@ -1,0 +1,69 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# Android Studio & Gradle
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/.gradle/
+.gradle/
+local.properties
+
+# Secrets, Keystores & Credentials (STRICT)
+*.keystore
+*.jks
+*.key
+*.pem
+*.p12
+*.pfx
+key.properties
+service-account*.json
+*secret*
+.env
+.env.*
+
+# Firebase debug logs
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Temporary Staging & Gallery Artifacts
+gallery_staging/
+9DILI_EXPRESS_UI_UX_GALLERY.zip
+
+# Widget Preview related
+.widget_preview/

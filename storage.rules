@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ==========================================
+    // 1. Tickets de caisse : /receipts/{errandId}/{fileName}
+    // Lecture autorisée uniquement aux utilisateurs authentifiés.
+    // Écriture restreinte aux images JPEG/PNG/WebP de moins de 10 Mo.
+    // ==========================================
+    match /receipts/{errandId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+                   request.resource.size < 10 * 1024 * 1024 &&
+                   request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // ==========================================
+    // 2. Photos de profil utilisateur : /avatars/{userId}/{fileName}
+    // Strictement restreint au propriétaire du compte
+    // ==========================================
+    match /avatars/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+                   request.auth.uid == userId &&
+                   request.resource.size < 5 * 1024 * 1024 &&
+                   request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+  }
+}

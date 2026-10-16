@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "273784230349",
+    "project_id": "dili-express",
+    "storage_bucket": "dili-express.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273784230349:android:1317b52fa41defee973484",
+        "android_client_info": {
+          "package_name": "com.ghdinteractivestudio.dili_express"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "273784230349-0lr2crsalpk51apeetf96fhthl4ap6k1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUbk_KE1NJ2QMeGhUvg882EMgFrXB6Qi0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "273784230349-0lr2crsalpk51apeetf96fhthl4ap6k1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:273784230349:android:35bbc811e38deeb1973484",
+        "android_client_info": {
+          "package_name": "com.ghdinteractivestudio.diliexpress"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "273784230349-0lr2crsalpk51apeetf96fhthl4ap6k1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUbk_KE1NJ2QMeGhUvg882EMgFrXB6Qi0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "273784230349-0lr2crsalpk51apeetf96fhthl4ap6k1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

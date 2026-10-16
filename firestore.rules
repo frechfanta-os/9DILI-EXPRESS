@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Fonctions d'aide à la sécurité
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getErrand(errandId) {
+      return get(/databases/$(database)/documents/errands/$(errandId)).data;
+    }
+
+    // ==========================================
+    // 1. Profils Utilisateurs (/users/{userId})
+    // ==========================================
+    match /users/{userId} {
+      // Lecture autorisée pour tout utilisateur authentifié (affichage profil, nom, note)
+      allow read: if isAuthenticated();
+
+      // Création : Rôle initial limité à 'client' ou 'shopper', rating fixé à 5.0, trésorerie initiale à 0.0
+      allow create: if isOwner(userId) &&
+                       request.resource.data.uid == userId &&
+                       request.resource.data.role in ['client', 'shopper'] &&
+                       request.resource.data.rating == 5.0 &&
+                       request.resource.data.availableCash == 0.0;
+
+      // Mise à jour : Interdiction formelle de modifier son propre rôle, sa note ou sa trésorerie de manière arbitraire
+      allow update: if isOwner(userId) &&
+                       request.resource.data.uid == resource.data.uid &&
+                       request.resource.data.role == resource.data.role &&
+                       request.resource.data.rating == resource.data.rating &&
+                       request.resource.data.availableCash == resource.data.availableCash;
+
+      // Suppression réservée à l'administration
+      allow delete: if false;
+    }
+
+    // ==========================================
+    // 2. Courses (/errands/{errandId})
+    // ==========================================
+    match /errands/{errandId} {
+      // Lecture des courses pour le radar shopper et le suivi client
+      allow read: if isAuthenticated();
+
+      // Création : Réservée au client authentifié pour lui-même, statut initial 'pending',
+      // INTERDICTION formelle d'exposer le PIN dans le document public de la course !
+      allow create: if isAuthenticated() &&
+                    request.resource.data.clientId == request.auth.uid &&
+                    request.resource.data.status == 'pending' &&
+                    request.resource.data.shopperId == null;
+
+      // Mise à jour encadrée selon le cycle de vie :
+      allow update: if isAuthenticated() && (
+        // Cas A : Le client créateur modifie sa course (annulation, acceptation d'offre)
+        (resource.data.clientId == request.auth.uid &&
+         request.resource.data.clientId == resource.data.clientId &&
+         (resource.data.ticketAmount == null || request.resource.data.ticketAmount == resource.data.ticketAmount)) ||
+
+        // Cas B : Le shoppeur DÉJÀ ASSIGNÉ met à jour sa position ou le flux de livraison
+        (resource.data.shopperId == request.auth.uid &&
+         request.resource.data.clientId == resource.data.clientId &&
+         request.resource.data.shopperId == resource.data.shopperId &&
+         (
+           // Rafraîchissement de position GPS en direct ou tentatives PIN
+           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shopperLocation', 'pinFailedAttempts', 'pinLocked', 'updatedAt'])) ||
+           // Passage au statut 'delivering' UNIQUEMENT avec ticket et photo validés
+           (request.resource.data.status == 'delivering' &&
+            resource.data.status == 'shopping' &&
+            request.resource.data.ticketAmount is number &&
+            request.resource.data.ticketAmount > 0 &&
+            request.resource.data.ticketPhotoUrl != null) ||
+           // Clôture après validation de livraison
+           (request.resource.data.status == 'completed' &&
+            resource.data.status == 'delivering')
+         ))
+      );
+
+      // Suppression uniquement autorisée par le client créateur si la course est encore 'pending'
+      allow delete: if isAuthenticated() &&
+                    resource.data.clientId == request.auth.uid &&
+                    resource.data.status == 'pending';
+
+      // ==========================================
+      // 2.1 Secret du PIN : /errands/{errandId}/secrets/pin
+      // Strictement réservé au client créateur de la course !
+      // Le shopper n'a AUCUN droit de lecture sur ce document !
+      // ==========================================
+      match /secrets/pin {
+        allow read, write: if isAuthenticated() &&
+          getErrand(errandId).clientId == request.auth.uid;
+      }
+
+      // ==========================================
+      // 2.2 Validation du PIN par le Shopper : /errands/{errandId}/verification/delivery_pin
+      // L'écriture n'est autorisée par le moteur de règles QUE SI le PIN soumis correspond
+      // exactement au PIN secret stocké dans /secrets/pin !
+      // ==========================================
+      match /verification/delivery_pin {
+        allow read: if isAuthenticated() && (
+          getErrand(errandId).clientId == request.auth.uid ||
+          getErrand(errandId).shopperId == request.auth.uid
+        );
+        allow create: if isAuthenticated() &&
+          getErrand(errandId).shopperId == request.auth.uid &&
+          getErrand(errandId).status == 'delivering' &&
+          request.resource.data.pin == get(/databases/$(database)/documents/errands/$(errandId)/secrets/pin).data.pin;
+      }
+
+      // ==========================================
+      // 2.3 Sous-collection Articles : /errands/{errandId}/items/{itemId}
+      // ==========================================
+      match /items/{itemId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isAuthenticated() && (
+          getErrand(errandId).clientId == request.auth.uid ||
+          getErrand(errandId).shopperId == request.auth.uid
+        );
+        allow delete: if isAuthenticated() &&
+          getErrand(errandId).clientId == request.auth.uid &&
+          getErrand(errandId).status == 'pending';
+      }
+
+      // ==========================================
+      // 2.4 Sous-collection Offres (Bids) : /errands/{errandId}/bids/{bidId}
+      // ==========================================
+      match /bids/{bidId} {
+        allow read: if isAuthenticated();
+
+        allow create: if isAuthenticated() &&
+                      request.resource.data.shopperId == request.auth.uid &&
+                      getErrand(errandId).status == 'pending';
+
+        allow update: if isAuthenticated() && (
+          (resource.data.shopperId == request.auth.uid && getErrand(errandId).status == 'pending') ||
+          getErrand(errandId).clientId == request.auth.uid
+        );
+
+        allow delete: if isAuthenticated() &&
+                      resource.data.shopperId == request.auth.uid;
+      }
+    }
+
+    // ==========================================
+    // 3. Catalogue Produits (/catalog_products/{productId})
+    // Lecture publique, écriture réservée à l'administration
+    // ==========================================
+    match /catalog_products/{productId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Géré par script admin
+    }
+
+    match /catalog_categories/{categoryId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}

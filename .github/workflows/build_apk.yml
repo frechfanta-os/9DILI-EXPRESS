@@ -1,0 +1,89 @@
+name: 9DILI EXPRESS Release APK & In-App OTA Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-release:
+    name: Build & Validate Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK Build-Tools & aapt
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Extract Pubspec Version
+        id: version
+        run: |
+          VERSION_LINE=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: //')
+          VERSION_NAME=$(echo $VERSION_LINE | cut -d'+' -f1 | tr -d ' ')
+          VERSION_CODE=$(echo $VERSION_LINE | cut -d'+' -f2 | tr -d ' ')
+          echo "PUBSPEC_VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "PUBSPEC_VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "Building 9DILI EXPRESS v$VERSION_NAME ($VERSION_CODE)"
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Android Release APK
+        run: |
+          flutter build apk --release \
+            --build-name="${{ env.PUBSPEC_VERSION_NAME }}" \
+            --build-number="${{ env.PUBSPEC_VERSION_CODE }}"
+
+      - name: Locate AAPT & Verify APK Badging
+        run: |
+          AAPT_BIN=$(find $ANDROID_HOME/build-tools -name aapt | sort -V | tail -n 1)
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          echo "Using AAPT at: $AAPT_BIN"
+          $AAPT_BIN dump badging "$APK_PATH" | grep "package: name="
+
+      - name: Package Release Artifacts & Generate SHA-256
+        run: |
+          cd build/app/outputs/flutter-apk/
+          cp app-release.apk "dili_express-v${{ env.PUBSPEC_VERSION_NAME }}.apk"
+          sha256sum app-release.apk > app-release.apk.sha256
+          sha256sum "dili_express-v${{ env.PUBSPEC_VERSION_NAME }}.apk" >> app-release.apk.sha256
+          RELEASE_HASH=$(head -n 1 app-release.apk.sha256 | awk '{print $1}')
+          echo "RELEASE_HASH=$RELEASE_HASH" >> $GITHUB_ENV
+          cat app-release.apk.sha256
+
+      - name: Generate Release Notes
+        run: |
+          cat << 'EOF' > RELEASE_NOTES_v${{ env.PUBSPEC_VERSION_NAME }}.md
+          ## 9DILI EXPRESS v${{ env.PUBSPEC_VERSION_NAME }}
+
+          Mise à jour de performance et sécurité :
+          - Garde-fous des workflows d'achat et livraison
+          - Vérification sécurisée du code PIN de remise
+          - Calcul automatique exact ticket + commission
+
+          **SHA-256:** ${{ env.RELEASE_HASH }}
+          EOF
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          body_path: RELEASE_NOTES_v${{ env.PUBSPEC_VERSION_NAME }}.md
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/dili_express-v${{ env.PUBSPEC_VERSION_NAME }}.apk
+            build/app/outputs/flutter-apk/app-release.apk.sha256
