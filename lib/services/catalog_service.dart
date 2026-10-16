@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/catalog_category_model.dart';
 import '../models/catalog_product_model.dart';
 import '../models/errand_item_model.dart';
@@ -374,7 +375,9 @@ class CatalogService {
         final snap = await ref.orderBy('sortOrder').get();
         if (snap.docs.isNotEmpty) {
           return snap.docs
-              .map((d) => CatalogCategoryModel.fromMap(d.data(), documentId: d.id))
+              .map(
+                (d) => CatalogCategoryModel.fromMap(d.data(), documentId: d.id),
+              )
               .toList();
         }
       } catch (_) {
@@ -389,14 +392,21 @@ class CatalogService {
     final ref = _productsRef;
     if (ref != null) {
       try {
-        Query<Map<String, dynamic>> query = ref.where('isActive', isEqualTo: true);
-        if (categoryId != null && categoryId.isNotEmpty && categoryId != 'all') {
+        Query<Map<String, dynamic>> query = ref.where(
+          'isActive',
+          isEqualTo: true,
+        );
+        if (categoryId != null &&
+            categoryId.isNotEmpty &&
+            categoryId != 'all') {
           query = query.where('categoryId', isEqualTo: categoryId);
         }
         final snap = await query.get();
         if (snap.docs.isNotEmpty) {
           return snap.docs
-              .map((d) => CatalogProductModel.fromMap(d.data(), documentId: d.id))
+              .map(
+                (d) => CatalogProductModel.fromMap(d.data(), documentId: d.id),
+              )
               .toList();
         }
       } catch (_) {
@@ -422,7 +432,10 @@ class CatalogService {
   }
 
   /// Convertit un produit sélectionné dans le catalogue vers un ErrandItemModel pour la commande.
-  static ErrandItemModel toErrandItem(CatalogProductModel product, {double? quantity}) {
+  static ErrandItemModel toErrandItem(
+    CatalogProductModel product, {
+    double? quantity,
+  }) {
     return ErrandItemModel(
       itemId: '', // Généré à l'enregistrement
       name: '${product.nameFr} (${product.nameAr})',

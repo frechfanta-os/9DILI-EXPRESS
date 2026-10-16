@@ -1,7 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:dili_express/models/catalog_category_model.dart';
-import 'package:dili_express/models/catalog_product_model.dart';
 import 'package:dili_express/models/errand_item_model.dart';
 import 'package:dili_express/models/user_model.dart';
 import 'package:dili_express/services/catalog_service.dart';
@@ -9,15 +7,18 @@ import 'package:dili_express/services/map_tracking_service.dart';
 
 void main() {
   group('1. Catalogue Produits Algériens & Catégories', () {
-    test('Contient exactement 11 catégories officielles avec noms FR et AR', () {
-      expect(CatalogService.defaultCategories.length, equals(11));
-      for (final cat in CatalogService.defaultCategories) {
-        expect(cat.categoryId, isNotEmpty);
-        expect(cat.nameFr, isNotEmpty);
-        expect(cat.nameAr, isNotEmpty);
-        expect(cat.iconName, isNotEmpty);
-      }
-    });
+    test(
+      'Contient exactement 11 catégories officielles avec noms FR et AR',
+      () {
+        expect(CatalogService.defaultCategories.length, equals(11));
+        for (final cat in CatalogService.defaultCategories) {
+          expect(cat.categoryId, isNotEmpty);
+          expect(cat.nameFr, isNotEmpty);
+          expect(cat.nameAr, isNotEmpty);
+          expect(cat.iconName, isNotEmpty);
+        }
+      },
+    );
 
     test('Contient les produits emblématiques du terroir algérien', () {
       expect(CatalogService.defaultProducts.length, greaterThanOrEqualTo(20));
@@ -33,26 +34,29 @@ void main() {
       expect(brands, contains('Ifri'));
     });
 
-    test('Recherche locale de produits par mot-clé (bilingue) et catégorie', () {
-      final service = CatalogService();
+    test(
+      'Recherche locale de produits par mot-clé (bilingue) et catégorie',
+      () {
+        final service = CatalogService();
 
-      // Recherche par nom français
-      final huiles = service.searchLocalProducts(query: 'Fleurial');
-      expect(huiles, isNotEmpty);
-      expect(huiles.first.brand, equals('Cevital'));
+        // Recherche par nom français
+        final huiles = service.searchLocalProducts(query: 'Fleurial');
+        expect(huiles, isNotEmpty);
+        expect(huiles.first.brand, equals('Cevital'));
 
-      // Recherche par marque
-      final hamoud = service.searchLocalProducts(query: 'Hamoud');
-      expect(hamoud, isNotEmpty);
-      expect(hamoud.first.brand, equals('Hamoud Boualem'));
+        // Recherche par marque
+        final hamoud = service.searchLocalProducts(query: 'Hamoud');
+        expect(hamoud, isNotEmpty);
+        expect(hamoud.first.brand, equals('Hamoud Boualem'));
 
-      // Recherche par catégorie
-      final boissons = service.searchLocalProducts(categoryId: 'boissons');
-      expect(boissons, isNotEmpty);
-      for (final p in boissons) {
-        expect(p.categoryId, equals('boissons'));
-      }
-    });
+        // Recherche par catégorie
+        final boissons = service.searchLocalProducts(categoryId: 'boissons');
+        expect(boissons, isNotEmpty);
+        for (final p in boissons) {
+          expect(p.categoryId, equals('boissons'));
+        }
+      },
+    );
 
     test('Conversion d\'un produit du catalogue vers ErrandItemModel', () {
       final selecto = CatalogService.defaultProducts.firstWhere(
@@ -128,7 +132,10 @@ void main() {
       const algerCentre = LatLng(36.7538, 3.0588);
       const babEzzouar = LatLng(36.7208, 3.1834);
 
-      final distanceKm = MapTrackingService.calculateDistanceKm(algerCentre, babEzzouar);
+      final distanceKm = MapTrackingService.calculateDistanceKm(
+        algerCentre,
+        babEzzouar,
+      );
       // Distance corrigée ~14-16 km avec coefficient urbain
       expect(distanceKm, greaterThan(10.0));
       expect(distanceKm, lessThan(20.0));
@@ -151,14 +158,23 @@ void main() {
 
       expect(estimateWalk.durationMinutes, greaterThanOrEqualTo(10));
       expect(estimateMoto.durationMinutes, lessThanOrEqualTo(10));
-      expect(estimateMoto.durationMinutes, lessThan(estimateWalk.durationMinutes));
+      expect(
+        estimateMoto.durationMinutes,
+        lessThan(estimateWalk.durationMinutes),
+      );
       expect(estimateMoto.suggestedCommission, greaterThanOrEqualTo(250.0));
     });
 
     test('Génération de la couche de tuiles OpenStreetMap avec User-Agent conforme', () {
       final tileLayer = MapTrackingService.buildOsmTileLayer();
-      expect(tileLayer.urlTemplate, equals('https://tile.openstreetmap.org/{z}/{x}/{y}.png'));
-      expect(MapTrackingService.userAgentPackageName, equals('com.ghdinteractivestudio.dili_express'));
+      expect(
+        tileLayer.urlTemplate,
+        equals('https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+      );
+      expect(
+        MapTrackingService.userAgentPackageName,
+        equals('com.ghdinteractivestudio.dili_express'),
+      );
     });
   });
 }

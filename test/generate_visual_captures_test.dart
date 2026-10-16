@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,10 +9,16 @@ import 'package:dili_express/ui/theme/app_theme.dart';
 
 void main() {
   const String localDir = '/root/dili_express/screenshots';
-  const String artifactDir = '/root/.gemini/antigravity-cli/brain/73ce4204-d933-4abd-805b-1d1d6763129e/screenshots';
+  const String artifactDir =
+      '/root/.gemini/antigravity-cli/brain/73ce4204-d933-4abd-805b-1d1d6763129e/screenshots';
 
-  Future<void> saveBoundaryToPng(GlobalKey key, String subFolder, String fileName) async {
-    final boundary = key.currentContext!.findRenderObject() as RenderRepaintBoundary;
+  Future<void> saveBoundaryToPng(
+    GlobalKey key,
+    String subFolder,
+    String fileName,
+  ) async {
+    final boundary =
+        key.currentContext!.findRenderObject() as RenderRepaintBoundary;
     final image = await boundary.toImage(pixelRatio: 2.0);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final bytes = byteData!.buffer.asUint8List();
@@ -37,11 +44,7 @@ void main() {
         theme: AppTheme.lightTheme,
         home: MediaQuery(
           data: MediaQueryData(size: size),
-          child: SizedBox(
-            width: size.width,
-            height: size.height,
-            child: child,
-          ),
+          child: SizedBox(width: size.width, height: size.height, child: child),
         ),
       ),
     );
@@ -62,16 +65,20 @@ void main() {
                 color: AppTheme.primaryOrange.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.flash_on, color: AppTheme.primaryOrange, size: 20),
+              child: const Icon(
+                Icons.flash_on,
+                color: AppTheme.primaryOrange,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 8),
-            const Text('9DILI EXPRESS', style: TextStyle(fontWeight: FontWeight.w900)),
+            const Text(
+              '9DILI EXPRESS',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
           ],
         ),
-        actions: const [
-          Icon(Icons.person_outline),
-          SizedBox(width: 16),
-        ],
+        actions: const [Icon(Icons.person_outline), SizedBox(width: 16)],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -91,16 +98,37 @@ void main() {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Adresse de livraison active',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.violetAccent)),
+                          Text(
+                            'Adresse de livraison active',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.violetAccent,
+                            ),
+                          ),
                           SizedBox(height: 2),
-                          Text('Hydra, Alger',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppTheme.textDark)),
+                          Text(
+                            'Hydra, Alger',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textDark,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    TextButton(onPressed: () {}, child: const Text('Modifier', style: TextStyle(color: AppTheme.violetAccent, fontSize: 12))),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text(
+                        'Modifier',
+                        style: TextStyle(
+                          color: AppTheme.violetAccent,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -115,11 +143,17 @@ void main() {
               ),
               onPressed: () {},
               icon: const Icon(Icons.edit_note, size: 22),
-              label: const Text('Créer ma liste 📝', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Créer ma liste 📝',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(height: 16),
 
-            const Text('Mes Commandes en cours', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text(
+              'Mes Commandes en cours',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 10),
 
             // Carte de course active
@@ -136,20 +170,40 @@ void main() {
                           child: Text(
                             'Supermarché Uno',
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: AppTheme.warningOrange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-                          child: const Text('En magasin 🛒',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.warningOrange)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppTheme.warningOrange.withValues(
+                              alpha: 0.15,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'En magasin 🛒',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.warningOrange,
+                            ),
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    const Text('📍 Bab Ezzouar, Alger', style: TextStyle(fontSize: 12)),
+                    const Text(
+                      '📍 Bab Ezzouar, Alger',
+                      style: TextStyle(fontSize: 12),
+                    ),
                     const Divider(height: 18),
 
                     // Montants décomposés
@@ -162,25 +216,57 @@ void main() {
                       ),
                       child: const Column(
                         children: [
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Expanded(child: Text('Budget estimé :')),
-                            Text('3 500 DA'),
-                          ]),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text('Budget estimé :')),
+                              Text('3 500 DA'),
+                            ],
+                          ),
                           SizedBox(height: 4),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Expanded(child: Text('Commission négociée :')),
-                            Text('+ 450 DA', style: TextStyle(color: AppTheme.primaryOrange, fontWeight: FontWeight.bold)),
-                          ]),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text('Commission négociée :')),
+                              Text(
+                                '+ 450 DA',
+                                style: TextStyle(
+                                  color: AppTheme.primaryOrange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                           SizedBox(height: 4),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Expanded(child: Text('Montant réel ticket :')),
-                            Text('3 200,50 DA', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ]),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text('Montant réel ticket :')),
+                              Text(
+                                '3 200,50 DA',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                           Divider(height: 12),
-                          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                            Expanded(child: Text('TOTAL FINAL :', style: TextStyle(fontWeight: FontWeight.w900))),
-                            Text('3 650,50 DA', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-                          ]),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'TOTAL FINAL :',
+                                  style: TextStyle(fontWeight: FontWeight.w900),
+                                ),
+                              ),
+                              Text(
+                                '3 650,50 DA',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -189,19 +275,36 @@ void main() {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 8,
+                              ),
+                            ),
                             onPressed: () {},
                             icon: const Icon(Icons.phone, size: 15),
-                            label: const Text('Appeler', style: TextStyle(fontSize: 12)),
+                            label: const Text(
+                              'Appeler',
+                              style: TextStyle(fontSize: 12),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.violetAccent, padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.violetAccent,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 10,
+                                horizontal: 8,
+                              ),
+                            ),
                             onPressed: () {},
                             icon: const Icon(Icons.navigation, size: 15),
-                            label: const Text('Suivi GPS', style: TextStyle(fontSize: 12)),
+                            label: const Text(
+                              'Suivi GPS',
+                              style: TextStyle(fontSize: 12),
+                            ),
                           ),
                         ),
                       ],
@@ -216,8 +319,14 @@ void main() {
       bottomNavigationBar: NavigationBar(
         selectedIndex: 0,
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.explore), label: 'Accueil Client'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
+          NavigationDestination(
+            icon: Icon(Icons.explore),
+            label: 'Accueil Client',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: 'Profil',
+          ),
         ],
       ),
     );
@@ -228,9 +337,7 @@ void main() {
   // ==========================================
   Widget buildShopperRadarPreview() {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('9DILI EXPRESS (Shopper)'),
-      ),
+      appBar: AppBar(title: const Text('9DILI EXPRESS (Shopper)')),
       body: Column(
         children: [
           // Statut Shopper & Trésorerie
@@ -245,19 +352,38 @@ void main() {
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: const BoxDecoration(color: AppTheme.accentGreen, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(
+                        color: AppTheme.accentGreen,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('En ligne', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.accentGreen)),
-                        Text('En poche : 12 000 DA', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                        Text(
+                          'En ligne',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.accentGreen,
+                          ),
+                        ),
+                        Text(
+                          'En poche : 12 000 DA',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
-                Switch(value: true, activeThumbColor: AppTheme.accentGreen, onChanged: (_) {}),
+                Switch(
+                  value: true,
+                  activeThumbColor: AppTheme.accentGreen,
+                  onChanged: (_) {},
+                ),
               ],
             ),
           ),
@@ -270,8 +396,14 @@ void main() {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Mes Courses en cours (Shopper) 🚴',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.violetAccent)),
+                const Text(
+                  'Mes Courses en cours (Shopper) 🚴',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: AppTheme.violetAccent,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Card(
                   color: Colors.white,
@@ -284,26 +416,55 @@ void main() {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Expanded(
-                              child: Text('Carrefour El Biar',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text(
+                                'Carrefour El Biar',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(color: AppTheme.warningOrange.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
-                              child: const Text('Shopping', style: TextStyle(color: AppTheme.warningOrange, fontSize: 10, fontWeight: FontWeight.bold)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.warningOrange.withValues(
+                                  alpha: 0.15,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Shopping',
+                                style: TextStyle(
+                                  color: AppTheme.warningOrange,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        const Text('📍 Bab Ezzouar • 450 DA comm.', style: TextStyle(fontSize: 11)),
+                        const Text(
+                          '📍 Bab Ezzouar • 450 DA comm.',
+                          style: TextStyle(fontSize: 11),
+                        ),
                         const SizedBox(height: 6),
                         ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryOrange, padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryOrange,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 12,
+                            ),
+                          ),
                           onPressed: () {},
                           icon: const Icon(Icons.shopping_cart, size: 14),
-                          label: const Text('Mode En Magasin', style: TextStyle(fontSize: 11)),
+                          label: const Text(
+                            'Mode En Magasin',
+                            style: TextStyle(fontSize: 11),
+                          ),
                         ),
                       ],
                     ),
@@ -318,7 +479,10 @@ void main() {
             child: ListView(
               padding: const EdgeInsets.all(14),
               children: [
-                const Text('Courses disponibles sur le radar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const Text(
+                  'Courses disponibles sur le radar',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
                 const SizedBox(height: 8),
                 Card(
                   child: Padding(
@@ -330,20 +494,41 @@ void main() {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Expanded(
-                              child: Text('Supermarché Ardis',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                'Supermarché Ardis',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: AppTheme.violetSurface, borderRadius: BorderRadius.circular(10)),
-                              child: const Text('2.4 km', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.violetAccent)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.violetSurface,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                '2.4 km',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.violetAccent,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        const Text('📍 Mohammadia, Alger', style: TextStyle(fontSize: 12)),
+                        const Text(
+                          '📍 Mohammadia, Alger',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         const SizedBox(height: 8),
 
                         // Alerte trésorerie
@@ -357,26 +542,50 @@ void main() {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Expanded(
-                                child: Text('Trésorerie requise : 4 500 DA',
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentGreen)),
+                                child: Text(
+                                  'Trésorerie requise : 4 500 DA',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.accentGreen,
+                                  ),
+                                ),
                               ),
-                              Text('Fonds OK ✅',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentGreen)),
+                              Text(
+                                'Fonds OK ✅',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.accentGreen,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            IconButton.filledTonal(onPressed: () {}, icon: const Icon(Icons.phone, size: 18), tooltip: 'Appeler'),
+                            IconButton.filledTonal(
+                              onPressed: () {},
+                              icon: const Icon(Icons.phone, size: 18),
+                              tooltip: 'Appeler',
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryOrange, padding: const EdgeInsets.symmetric(vertical: 10)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryOrange,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                ),
                                 onPressed: () {},
                                 icon: const Icon(Icons.local_offer, size: 15),
-                                label: const Text('Faire une offre', style: TextStyle(fontSize: 12)),
+                                label: const Text(
+                                  'Faire une offre',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                               ),
                             ),
                           ],
@@ -393,8 +602,14 @@ void main() {
       bottomNavigationBar: NavigationBar(
         selectedIndex: 0,
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.radar), label: 'Radar Shopper'),
-          NavigationDestination(icon: Icon(Icons.person_outline), label: 'Profil'),
+          NavigationDestination(
+            icon: Icon(Icons.radar),
+            label: 'Radar Shopper',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            label: 'Profil',
+          ),
         ],
       ),
     );
@@ -422,12 +637,21 @@ void main() {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.edit_note, color: AppTheme.primaryOrange, size: 24),
+                    Icon(
+                      Icons.edit_note,
+                      color: AppTheme.primaryOrange,
+                      size: 24,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
-                      child: Text('Créer ma liste',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Créer ma liste',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -472,12 +696,20 @@ void main() {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.security, color: AppTheme.violetAccent, size: 20),
+                      Icon(
+                        Icons.security,
+                        color: AppTheme.violetAccent,
+                        size: 20,
+                      ),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Code PIN généré : 4821\n(Pour la remise physique)',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textDark),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textDark,
+                          ),
                         ),
                       ),
                     ],
@@ -490,9 +722,18 @@ void main() {
                     TextButton(onPressed: () {}, child: const Text('Annuler')),
                     const SizedBox(width: 6),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryOrange, padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryOrange,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                      ),
                       onPressed: () {},
-                      child: const Text('Publier', style: TextStyle(fontSize: 13)),
+                      child: const Text(
+                        'Publier',
+                        style: TextStyle(fontSize: 13),
+                      ),
                     ),
                   ],
                 ),
@@ -513,7 +754,10 @@ void main() {
         title: const Column(
           children: [
             Text('Mode En Magasin 🛒', style: TextStyle(fontSize: 15)),
-            Text('Carrefour El Biar', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+            Text(
+              'Carrefour El Biar',
+              style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+            ),
           ],
         ),
       ),
@@ -526,10 +770,58 @@ void main() {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Column(children: [Text('1', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.accentGreen)), Text('Trouvés', style: TextStyle(fontSize: 10))]),
-                Column(children: [Text('1', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.warningOrange)), Text('Remplacés', style: TextStyle(fontSize: 10))]),
-                Column(children: [Text('1', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.errorRed)), Text('Rupture', style: TextStyle(fontSize: 10))]),
-                Column(children: [Text('3', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.secondaryNavy)), Text('Total', style: TextStyle(fontSize: 10))]),
+                Column(
+                  children: [
+                    Text(
+                      '1',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.accentGreen,
+                      ),
+                    ),
+                    Text('Trouvés', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      '1',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.warningOrange,
+                      ),
+                    ),
+                    Text('Remplacés', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      '1',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.errorRed,
+                      ),
+                    ),
+                    Text('Rupture', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      '3',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.secondaryNavy,
+                      ),
+                    ),
+                    Text('Total', style: TextStyle(fontSize: 10)),
+                  ],
+                ),
               ],
             ),
           ),
@@ -539,7 +831,13 @@ void main() {
               children: [
                 // Item 1 : Trouvé
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppTheme.accentGreen, width: 2)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: const BorderSide(
+                      color: AppTheme.accentGreen,
+                      width: 2,
+                    ),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
@@ -548,13 +846,35 @@ void main() {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: Text('Huile Fleurial 5L', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+                            Expanded(
+                              child: Text(
+                                'Huile Fleurial 5L',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                             SizedBox(width: 8),
-                            Text('1 x', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.violetAccent)),
+                            Text(
+                              '1 x',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.violetAccent,
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: 4),
-                        Text('Statut : Trouvé en rayon ✅', style: TextStyle(color: AppTheme.accentGreen, fontWeight: FontWeight.bold, fontSize: 12)),
+                        Text(
+                          'Statut : Trouvé en rayon ✅',
+                          style: TextStyle(
+                            color: AppTheme.accentGreen,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -563,7 +883,13 @@ void main() {
 
                 // Item 2 : Remplacé
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppTheme.warningOrange, width: 2)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: const BorderSide(
+                      color: AppTheme.warningOrange,
+                      width: 2,
+                    ),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
@@ -572,13 +898,35 @@ void main() {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: Text('Lait Candia 1L', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+                            Expanded(
+                              child: Text(
+                                'Lait Candia 1L',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                             SizedBox(width: 8),
-                            Text('2 x', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.violetAccent)),
+                            Text(
+                              '2 x',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.violetAccent,
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: 4),
-                        Text('Substitut : Soummam à 110 DA ⚠️', style: TextStyle(color: AppTheme.warningOrange, fontWeight: FontWeight.bold, fontSize: 12)),
+                        Text(
+                          'Substitut : Soummam à 110 DA ⚠️',
+                          style: TextStyle(
+                            color: AppTheme.warningOrange,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -587,7 +935,10 @@ void main() {
 
                 // Item 3 : Rupture
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14), side: const BorderSide(color: AppTheme.errorRed, width: 2)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: const BorderSide(color: AppTheme.errorRed, width: 2),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
@@ -596,13 +947,35 @@ void main() {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(child: Text('Café 100% Arabica', overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
+                            Expanded(
+                              child: Text(
+                                'Café 100% Arabica',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                             SizedBox(width: 8),
-                            Text('1 Pack', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.violetAccent)),
+                            Text(
+                              '1 Pack',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.violetAccent,
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: 4),
-                        Text('Statut : Rupture de stock ❌', style: TextStyle(color: AppTheme.errorRed, fontWeight: FontWeight.bold, fontSize: 12)),
+                        Text(
+                          'Statut : Rupture de stock ❌',
+                          style: TextStyle(
+                            color: AppTheme.errorRed,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -619,7 +992,10 @@ void main() {
               ),
               onPressed: () {},
               icon: const Icon(Icons.receipt_long, size: 20),
-              label: const Text('Passer au Ticket de Caisse 🧾', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Passer au Ticket de Caisse 🧾',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -644,16 +1020,26 @@ void main() {
               decoration: BoxDecoration(
                 color: AppTheme.accentGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.accentGreen.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppTheme.accentGreen.withValues(alpha: 0.3),
+                ),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.check_circle_outline, color: AppTheme.accentGreen, size: 20),
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: AppTheme.accentGreen,
+                    size: 20,
+                  ),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Ticket capturé et montant validé. Prêt pour livraison !',
-                      style: TextStyle(fontSize: 11, color: AppTheme.accentGreen, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.accentGreen,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -675,7 +1061,13 @@ void main() {
                   children: [
                     Icon(Icons.receipt, size: 50, color: AppTheme.accentGreen),
                     SizedBox(height: 6),
-                    Text('Photo du Ticket de Caisse (Valide)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text(
+                      'Photo du Ticket de Caisse (Valide)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -700,20 +1092,50 @@ void main() {
               ),
               child: const Column(
                 children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Expanded(child: Text('Montant du ticket :')),
-                    Text('3 200,50 DA', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ]),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text('Montant du ticket :')),
+                      Text(
+                        '3 200,50 DA',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                   SizedBox(height: 4),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Expanded(child: Text('Commission négociée :')),
-                    Text('+ 450,00 DA', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryOrange)),
-                  ]),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text('Commission négociée :')),
+                      Text(
+                        '+ 450,00 DA',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryOrange,
+                        ),
+                      ),
+                    ],
+                  ),
                   Divider(height: 14),
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Expanded(child: Text('TOTAL À ENCAISSER :', style: TextStyle(fontWeight: FontWeight.w900))),
-                    Text('3 650,50 DA', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.textDark)),
-                  ]),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'TOTAL À ENCAISSER :',
+                          style: TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      Text(
+                        '3 650,50 DA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -726,7 +1148,10 @@ void main() {
               ),
               onPressed: () {},
               icon: const Icon(Icons.delivery_dining),
-              label: const Text('Valider et Partir en Livraison 🚀', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              label: const Text(
+                'Valider et Partir en Livraison 🚀',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -754,25 +1179,44 @@ void main() {
                   Positioned(
                     top: 24,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 6),
+                        ],
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.timer, color: AppTheme.primaryOrange, size: 16),
+                          Icon(
+                            Icons.timer,
+                            color: AppTheme.primaryOrange,
+                            size: 16,
+                          ),
                           SizedBox(width: 4),
-                          Text('Arrivée : ~8 minutes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(
+                            'Arrivée : ~8 minutes',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                   const Positioned(
                     bottom: 24,
-                    child: Icon(Icons.delivery_dining, size: 40, color: AppTheme.primaryOrange),
+                    child: Icon(
+                      Icons.delivery_dining,
+                      size: 40,
+                      color: AppTheme.primaryOrange,
+                    ),
                   ),
                 ],
               ),
@@ -787,32 +1231,64 @@ void main() {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    offset: Offset(0, -2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Course en cours de livraison', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Course en cours de livraison',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 2),
-                  const Text('Shopper : Yacine • ⭐ 4.9', style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+                  const Text(
+                    'Shopper : Yacine • ⭐ 4.9',
+                    style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                  ),
                   const Spacer(),
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 8,
+                            ),
+                          ),
                           onPressed: () {},
                           icon: const Icon(Icons.phone, size: 16),
-                          label: const Text('Appeler', style: TextStyle(fontSize: 12)),
+                          label: const Text(
+                            'Appeler',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentGreen, padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentGreen,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 8,
+                            ),
+                          ),
                           onPressed: () {},
-                          icon: const Icon(Icons.check_circle_outline, size: 16),
-                          label: const Text('Remise & PIN 🤝', style: TextStyle(fontSize: 12)),
+                          icon: const Icon(
+                            Icons.check_circle_outline,
+                            size: 16,
+                          ),
+                          label: const Text(
+                            'Remise & PIN 🤝',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                     ],
@@ -845,9 +1321,15 @@ void main() {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Remise Sécurisée', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Remise Sécurisée',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4),
-                const Text('Présentez ce QR Code et ce PIN', style: TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                const Text(
+                  'Présentez ce QR Code et ce PIN',
+                  style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                ),
                 const SizedBox(height: 12),
 
                 // QR Code
@@ -864,28 +1346,58 @@ void main() {
 
                 // Code PIN
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.violetSurface,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Text(
                     'PIN : 4821',
-                    style: TextStyle(fontSize: 22, letterSpacing: 5, fontWeight: FontWeight.w900, color: AppTheme.violetAccent),
+                    style: TextStyle(
+                      fontSize: 22,
+                      letterSpacing: 5,
+                      fontWeight: FontWeight.w900,
+                      color: AppTheme.violetAccent,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text('Expire dans : 14:32 min ⏳', style: TextStyle(color: AppTheme.warningOrange, fontWeight: FontWeight.bold, fontSize: 11)),
+                const Text(
+                  'Expire dans : 14:32 min ⏳',
+                  style: TextStyle(
+                    color: AppTheme.warningOrange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
                 const SizedBox(height: 12),
 
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text('Total à régler :', style: TextStyle(fontSize: 12))),
-                      Text('3 650,50 DA', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppTheme.primaryOrange)),
+                      Expanded(
+                        child: Text(
+                          'Total à régler :',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                      Text(
+                        '3 650,50 DA',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: AppTheme.primaryOrange,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -916,48 +1428,92 @@ void main() {
                     color: AppTheme.primaryOrange.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.flash_on, color: AppTheme.primaryOrange, size: 36),
+                  child: const Icon(
+                    Icons.flash_on,
+                    color: AppTheme.primaryOrange,
+                    size: 36,
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
               const Center(
-                child: Text('9DILI EXPRESS', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                child: Text(
+                  '9DILI EXPRESS',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                ),
               ),
               const Center(
-                child: Text('Vos courses livrées en quelques minutes 🚀', style: TextStyle(color: AppTheme.textMuted, fontSize: 12)),
+                child: Text(
+                  'Vos courses livrées en quelques minutes 🚀',
+                  style: TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                ),
               ),
               const SizedBox(height: 24),
 
               // Bouton Google
               OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
                 onPressed: () {},
-                icon: const Icon(Icons.g_mobiledata, size: 26, color: Colors.red),
-                label: const Text('Continuer avec Google', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                icon: const Icon(
+                  Icons.g_mobiledata,
+                  size: 26,
+                  color: Colors.red,
+                ),
+                label: const Text(
+                  'Continuer avec Google',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 14),
               const Row(
                 children: [
                   Expanded(child: Divider()),
-                  Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('OU', style: TextStyle(color: AppTheme.textMuted, fontSize: 11))),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'OU',
+                      style: TextStyle(color: AppTheme.textMuted, fontSize: 11),
+                    ),
+                  ),
                   Expanded(child: Divider()),
                 ],
               ),
               const SizedBox(height: 14),
 
-              const TextField(decoration: InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined))),
+              const TextField(
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+              ),
               const SizedBox(height: 10),
-              const TextField(decoration: InputDecoration(labelText: 'Mot de passe', prefixIcon: Icon(Icons.lock_outline))),
+              const TextField(
+                decoration: InputDecoration(
+                  labelText: 'Mot de passe',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+              ),
               const SizedBox(height: 14),
 
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryOrange, padding: const EdgeInsets.symmetric(vertical: 14)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryOrange,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
                 onPressed: () {},
-                child: const Text('Se Connecter', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Se Connecter',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
               ),
               const SizedBox(height: 10),
               const Center(
-                child: Text('Numéro de téléphone strictement facultatif ✅', style: TextStyle(fontSize: 11, color: AppTheme.accentGreen)),
+                child: Text(
+                  'Numéro de téléphone strictement facultatif ✅',
+                  style: TextStyle(fontSize: 11, color: AppTheme.accentGreen),
+                ),
               ),
             ],
           ),
@@ -980,51 +1536,86 @@ void main() {
               child: CircleAvatar(
                 radius: 36,
                 backgroundColor: AppTheme.violetSurface,
-                child: Text('KZ', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.violetAccent)),
+                child: Text(
+                  'KZ',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.violetAccent,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 6),
-            const Text('Karim Ziani', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Text(
+              'Karim Ziani',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 2),
             const Wrap(
               alignment: WrapAlignment.center,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 Icon(Icons.star, color: Colors.amber, size: 14),
-                Text(' 5.0 (Client & Shopper)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                Text(
+                  ' 5.0 (Client & Shopper)',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
             const SizedBox(height: 20),
 
             const TextField(
-              decoration: InputDecoration(labelText: 'Nom complet', prefixIcon: Icon(Icons.person_outline)),
+              decoration: InputDecoration(
+                labelText: 'Nom complet',
+                prefixIcon: Icon(Icons.person_outline),
+              ),
             ),
             const SizedBox(height: 10),
             const TextField(
-              decoration: InputDecoration(labelText: 'Numéro de téléphone (Facultatif)', prefixIcon: Icon(Icons.phone_outlined)),
+              decoration: InputDecoration(
+                labelText: 'Numéro de téléphone (Facultatif)',
+                prefixIcon: Icon(Icons.phone_outlined),
+              ),
             ),
             const SizedBox(height: 10),
             const TextField(
-              decoration: InputDecoration(labelText: 'Trésorerie en poche (DA)', prefixIcon: Icon(Icons.account_balance_wallet_outlined)),
+              decoration: InputDecoration(
+                labelText: 'Trésorerie en poche (DA)',
+                prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+              ),
             ),
             const SizedBox(height: 16),
 
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryOrange, padding: const EdgeInsets.symmetric(vertical: 12)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryOrange,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
                 onPressed: () {},
-                child: const Text('Enregistrer les modifications', style: TextStyle(fontSize: 13)),
+                child: const Text(
+                  'Enregistrer les modifications',
+                  style: TextStyle(fontSize: 13),
+                ),
               ),
             ),
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(foregroundColor: AppTheme.errorRed, side: const BorderSide(color: AppTheme.errorRed), padding: const EdgeInsets.symmetric(vertical: 10)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.errorRed,
+                  side: const BorderSide(color: AppTheme.errorRed),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
                 onPressed: () {},
                 icon: const Icon(Icons.logout, size: 18),
-                label: const Text('Se déconnecter', style: TextStyle(fontSize: 13)),
+                label: const Text(
+                  'Se déconnecter',
+                  style: TextStyle(fontSize: 13),
+                ),
               ),
             ),
           ],
@@ -1036,7 +1627,9 @@ void main() {
   // ==========================================
   // EXECUTION TEST DE GÉNÉRATION
   // ==========================================
-  testWidgets('Génération intégrale des captures d\'écran 9DILI EXPRESS', (tester) async {
+  testWidgets('Génération intégrale des captures d\'écran 9DILI EXPRESS', (
+    tester,
+  ) async {
     const sizeCompact = Size(360, 640);
     const sizeModern = Size(412, 915);
 
@@ -1056,19 +1649,31 @@ void main() {
       final keyCompact = GlobalKey();
       tester.view.physicalSize = sizeCompact;
       tester.view.devicePixelRatio = 1.0;
-      await tester.pumpWidget(wrapInFrame(entry.value(), sizeCompact, keyCompact));
+      await tester.pumpWidget(
+        wrapInFrame(entry.value(), sizeCompact, keyCompact),
+      );
       await tester.pumpAndSettle();
       await tester.runAsync(() async {
-        await saveBoundaryToPng(keyCompact, entry.key, '${entry.key}_360x640.png');
+        await saveBoundaryToPng(
+          keyCompact,
+          entry.key,
+          '${entry.key}_360x640.png',
+        );
       });
 
       final keyModern = GlobalKey();
       tester.view.physicalSize = sizeModern;
       tester.view.devicePixelRatio = 1.0;
-      await tester.pumpWidget(wrapInFrame(entry.value(), sizeModern, keyModern));
+      await tester.pumpWidget(
+        wrapInFrame(entry.value(), sizeModern, keyModern),
+      );
       await tester.pumpAndSettle();
       await tester.runAsync(() async {
-        await saveBoundaryToPng(keyModern, entry.key, '${entry.key}_412x915.png');
+        await saveBoundaryToPng(
+          keyModern,
+          entry.key,
+          '${entry.key}_412x915.png',
+        );
       });
     }
 

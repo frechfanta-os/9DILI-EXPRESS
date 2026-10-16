@@ -16,7 +16,10 @@ class CatalogCategoryModel {
     this.isActive = true,
   });
 
-  factory CatalogCategoryModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
+  factory CatalogCategoryModel.fromMap(
+    Map<String, dynamic> map, {
+    String? documentId,
+  }) {
     return CatalogCategoryModel(
       categoryId: documentId ?? map['categoryId'] ?? '',
       nameFr: map['nameFr'] ?? '',

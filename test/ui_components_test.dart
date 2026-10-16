@@ -4,7 +4,10 @@ import 'package:dili_express/ui/theme/app_theme.dart';
 import 'package:dili_express/models/errand_model.dart';
 
 void main() {
-  Widget buildTestableWidget(Widget child, {Size surfaceSize = const Size(390, 844)}) {
+  Widget buildTestableWidget(
+    Widget child, {
+    Size surfaceSize = const Size(390, 844),
+  }) {
     return MaterialApp(
       theme: AppTheme.lightTheme,
       home: MediaQuery(
@@ -24,7 +27,9 @@ void main() {
       expect(AppTheme.textDark, equals(const Color(0xFF0F172A)));
     });
 
-    testWidgets('Rendu visuel des boutons Stitch et cartes arrondies', (tester) async {
+    testWidgets('Rendu visuel des boutons Stitch et cartes arrondies', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
           Scaffold(
@@ -60,7 +65,9 @@ void main() {
   });
 
   group('2. Audit Visuel — Cartes & Décomposition des Prix DZD', () {
-    testWidgets('Affichage transparent des montants et formule Total', (tester) async {
+    testWidgets('Affichage transparent des montants et formule Total', (
+      tester,
+    ) async {
       const errand = ErrandModel(
         errandId: 'errand_ui_01',
         clientId: 'c1',
@@ -83,10 +90,19 @@ void main() {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(errand.storeName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Budget : ${errand.estimatedBudget.toStringAsFixed(0)} DA'),
-                    Text('Ticket : ${errand.ticketAmount!.toStringAsFixed(2)} DA'),
-                    Text('Commission : ${errand.negotiatedCommission.toStringAsFixed(0)} DA'),
+                    Text(
+                      errand.storeName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Budget : ${errand.estimatedBudget.toStringAsFixed(0)} DA',
+                    ),
+                    Text(
+                      'Ticket : ${errand.ticketAmount!.toStringAsFixed(2)} DA',
+                    ),
+                    Text(
+                      'Commission : ${errand.negotiatedCommission.toStringAsFixed(0)} DA',
+                    ),
                     Text('Total : ${errand.totalAmount.toStringAsFixed(2)} DA'),
                   ],
                 ),
@@ -141,10 +157,15 @@ void main() {
 
       expect(find.text('9DILI EXPRESS'), findsOneWidget);
       expect(find.text('Créer ma liste'), findsOneWidget);
-      expect(tester.takeException(), isNull); // Aucune erreur de dépassement (RenderFlex overflow)
+      expect(
+        tester.takeException(),
+        isNull,
+      ); // Aucune erreur de dépassement (RenderFlex overflow)
     });
 
-    testWidgets('Format standard moderne Pixel 7 (412 x 915 dp)', (tester) async {
+    testWidgets('Format standard moderne Pixel 7 (412 x 915 dp)', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(412, 915);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() => tester.view.resetPhysicalSize());
@@ -174,7 +195,9 @@ void main() {
   });
 
   group('4. Audit Visuel — États de l\'Interface (Vide, Erreur, Succès)', () {
-    testWidgets('État vide de liste avec icône et message informatif', (tester) async {
+    testWidgets('État vide de liste avec icône et message informatif', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
           const Scaffold(
@@ -182,9 +205,16 @@ void main() {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.shopping_basket_outlined, size: 48, color: AppTheme.textMuted),
+                  Icon(
+                    Icons.shopping_basket_outlined,
+                    size: 48,
+                    color: AppTheme.textMuted,
+                  ),
                   SizedBox(height: 8),
-                  Text('Aucune commande active', style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Aucune commande active',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ],
               ),
             ),
@@ -196,7 +226,9 @@ void main() {
       expect(find.byIcon(Icons.shopping_basket_outlined), findsOneWidget);
     });
 
-    testWidgets('État d\'erreur avec bannière rouge accessible', (tester) async {
+    testWidgets('État d\'erreur avec bannière rouge accessible', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         buildTestableWidget(
           Scaffold(
@@ -210,7 +242,10 @@ void main() {
                   Expanded(
                     child: Text(
                       'Erreur de connexion au serveur',
-                      style: TextStyle(color: AppTheme.errorRed, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AppTheme.errorRed,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

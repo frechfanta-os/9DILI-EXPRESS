@@ -4,13 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 enum UserRole { client, shopper }
 
 /// Mode de transport du Shopper.
-enum ShopperTransportType {
-  walking,
-  bicycle,
-  scooter,
-  motorcycle,
-  car,
-}
+enum ShopperTransportType { walking, bicycle, scooter, motorcycle, car }
 
 extension ShopperTransportTypeExtension on ShopperTransportType {
   String get value {
@@ -133,10 +127,12 @@ class UserModel {
   final String? phone; // Optionnel : jamais obligatoire
   final String role; // 'client' ou 'shopper'
   final bool isOnline;
-  final double availableCash; // Trésorerie en poche pour le filtre d'acceptation
+  final double
+  availableCash; // Trésorerie en poche pour le filtre d'acceptation
   final double rating;
   final GeoPoint? location;
-  final String transportType; // 'walking', 'bicycle', 'scooter', 'motorcycle', 'car'
+  final String
+  transportType; // 'walking', 'bicycle', 'scooter', 'motorcycle', 'car'
   final double searchRadiusKm;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -177,7 +173,9 @@ class UserModel {
       isOnline: data['isOnline'] is bool ? data['isOnline'] as bool : false,
       availableCash: (data['availableCash'] as num?)?.toDouble() ?? 0.0,
       rating: (data['rating'] as num?)?.toDouble() ?? 5.0,
-      location: data['location'] is GeoPoint ? data['location'] as GeoPoint : null,
+      location: data['location'] is GeoPoint
+          ? data['location'] as GeoPoint
+          : null,
       transportType: data['transportType']?.toString() ?? 'walking',
       searchRadiusKm: (data['searchRadiusKm'] as num?)?.toDouble() ?? 5.0,
       createdAt: (data['createdAt'] is Timestamp)

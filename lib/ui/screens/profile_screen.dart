@@ -330,15 +330,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 DropdownMenuItem(
                                   value: 'scooter',
-                                  child: Text('🛴 Trottinette (Max 3 km - 8 kg)'),
+                                  child: Text(
+                                    '🛴 Trottinette (Max 3 km - 8 kg)',
+                                  ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'motorcycle',
-                                  child: Text('🛵 Moto / Scooter (Max 10 km - 20 kg)'),
+                                  child: Text(
+                                    '🛵 Moto / Scooter (Max 10 km - 20 kg)',
+                                  ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'car',
-                                  child: Text('🚗 Voiture (Max 25 km - 80+ kg)'),
+                                  child: Text(
+                                    '🚗 Voiture (Max 25 km - 80+ kg)',
+                                  ),
                                 ),
                               ],
                               onChanged: (val) {

@@ -7,9 +7,11 @@ class CatalogProductModel {
   final String nameFr;
   final String nameAr;
   final String? brand;
-  final String unit; // 'kg', 'g', 'L', 'pièce', 'paquet', 'bouteille', 'botte', 'sachet'
+  final String
+  unit; // 'kg', 'g', 'L', 'pièce', 'paquet', 'bouteille', 'botte', 'sachet'
   final double defaultQuantity;
-  final double indicativePrice; // EN DZD (Dinar Algérien) - INDICATIF UNIQUEMENT
+  final double
+  indicativePrice; // EN DZD (Dinar Algérien) - INDICATIF UNIQUEMENT
   final String? barcode; // Ex: EAN-13 débutant par 613...
   final String? imageUrl;
   final List<String> aliases;
@@ -46,7 +48,10 @@ class CatalogProductModel {
     return false;
   }
 
-  factory CatalogProductModel.fromMap(Map<String, dynamic> data, {String? documentId}) {
+  factory CatalogProductModel.fromMap(
+    Map<String, dynamic> data, {
+    String? documentId,
+  }) {
     return CatalogProductModel(
       productId: documentId ?? data['productId'] ?? '',
       categoryId: data['categoryId'] ?? '',
@@ -58,7 +63,11 @@ class CatalogProductModel {
       indicativePrice: (data['indicativePrice'] as num?)?.toDouble() ?? 0.0,
       barcode: data['barcode'],
       imageUrl: data['imageUrl'],
-      aliases: (data['aliases'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const [],
+      aliases:
+          (data['aliases'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
       isActive: data['isActive'] is bool ? data['isActive'] as bool : true,
       priceUpdatedAt: (data['priceUpdatedAt'] is Timestamp)
           ? (data['priceUpdatedAt'] as Timestamp).toDate()

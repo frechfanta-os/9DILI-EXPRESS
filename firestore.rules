@@ -52,14 +52,15 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                     request.resource.data.clientId == request.auth.uid &&
                     request.resource.data.status == 'pending' &&
-                    request.resource.data.shopperId == null;
+                    (!('shopperId' in request.resource.data) || request.resource.data.shopperId == null);
 
       // Mise à jour encadrée selon le cycle de vie :
       allow update: if isAuthenticated() && (
         // Cas A : Le client créateur modifie sa course (annulation, acceptation d'offre)
         (resource.data.clientId == request.auth.uid &&
          request.resource.data.clientId == resource.data.clientId &&
-         (resource.data.ticketAmount == null || request.resource.data.ticketAmount == resource.data.ticketAmount)) ||
+         request.resource.data.status in ['pending', 'accepted', 'cancelled'] &&
+         (!('ticketAmount' in resource.data) || request.resource.data.ticketAmount == resource.data.ticketAmount)) ||
 
         // Cas B : Le shoppeur DÉJÀ ASSIGNÉ met à jour sa position ou le flux de livraison
         (resource.data.shopperId == request.auth.uid &&
@@ -68,6 +69,9 @@ service cloud.firestore {
          (
            // Rafraîchissement de position GPS en direct ou tentatives PIN
            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['shopperLocation', 'pinFailedAttempts', 'pinLocked', 'updatedAt'])) ||
+           // Prise en charge en magasin
+           (request.resource.data.status == 'shopping' &&
+            resource.data.status == 'accepted') ||
            // Passage au statut 'delivering' UNIQUEMENT avec ticket et photo validés
            (request.resource.data.status == 'delivering' &&
             resource.data.status == 'shopping' &&
