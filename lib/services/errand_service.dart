@@ -223,26 +223,39 @@ class ErrandService {
     });
   }
 
-  /// Enregistre le montant du ticket et l'URL de la photo du ticket.
+  /// Enregistre le montant exact et le justificatif probant (référence de caisse ou photo/URI).
+  /// Conforme au plan Spark sans Storage : Ne requiert pas d'hébergement cloud d'image.
   Future<void> submitTicket({
     required String errandId,
     required double ticketAmount,
-    required String ticketPhotoUrl,
+    String? ticketPhotoUrl,
+    String? ticketRef,
   }) async {
     if (ticketAmount <= 0) {
       throw ArgumentError(
         "Le montant du ticket doit être strictement supérieur à zéro.",
       );
     }
-    if (ticketPhotoUrl.trim().isEmpty) {
-      throw ArgumentError("L'URL du justificatif de caisse est requise.");
+    final hasValidRef = ticketRef != null && ticketRef.trim().length >= 3;
+    final hasValidPhoto = ticketPhotoUrl != null && ticketPhotoUrl.trim().isNotEmpty;
+    if (!hasValidRef && !hasValidPhoto) {
+      throw ArgumentError(
+        "Un justificatif probant (référence de caisse ou photo) est obligatoire.",
+      );
     }
 
-    await _errandsRef.doc(errandId).update({
+    final updateData = <String, dynamic>{
       'ticketAmount': ticketAmount,
-      'ticketPhotoUrl': ticketPhotoUrl,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+    if (ticketPhotoUrl != null && ticketPhotoUrl.isNotEmpty) {
+      updateData['ticketPhotoUrl'] = ticketPhotoUrl;
+    }
+    if (ticketRef != null && ticketRef.isNotEmpty) {
+      updateData['ticketRef'] = ticketRef.trim();
+    }
+
+    await _errandsRef.doc(errandId).update(updateData);
   }
 
   /// Attestation explicite de l'appel téléphonique obligatoire avec horodatage et auteur.

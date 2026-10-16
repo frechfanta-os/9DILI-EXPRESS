@@ -1,0 +1,30 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "presence": {
+      "$shopperId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $shopperId",
+        ".validate": "newData.hasChildren(['isOnline', 'lastSeen']) && newData.child('isOnline').isBoolean() && newData.child('lastSeen').isNumber() && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance')"
+      }
+    },
+
+    "shopper_locations": {
+      "$shopperId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $shopperId",
+        ".validate": "newData.hasChildren(['latitude', 'longitude', 'timestamp']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && newData.child('timestamp').isNumber() && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance')"
+      }
+    },
+
+    "errand_tracking": {
+      "$errandId": {
+        ".read": "auth != null && (data.child('clientId').val() === auth.uid || data.child('shopperId').val() === auth.uid)",
+        ".write": "auth != null && ((!data.exists() && (newData.child('clientId').val() === auth.uid || newData.child('shopperId').val() === auth.uid)) || data.child('shopperId').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['latitude', 'longitude', 'updatedAt', 'shopperId', 'clientId']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && newData.child('updatedAt').isNumber() && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance')"
+      }
+    }
+  }
+}

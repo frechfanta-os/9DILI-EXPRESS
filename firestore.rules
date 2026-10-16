@@ -72,12 +72,13 @@ service cloud.firestore {
            // Prise en charge en magasin
            (request.resource.data.status == 'shopping' &&
             resource.data.status == 'accepted') ||
-           // Passage au statut 'delivering' UNIQUEMENT avec ticket et photo validés
+           // Passage au statut 'delivering' UNIQUEMENT avec ticket et justificatif validés (Spark sans Storage)
            (request.resource.data.status == 'delivering' &&
             resource.data.status == 'shopping' &&
             request.resource.data.ticketAmount is number &&
             request.resource.data.ticketAmount > 0 &&
-            request.resource.data.ticketPhotoUrl != null) ||
+            ((request.resource.data.ticketPhotoUrl != null) ||
+             ('ticketRef' in request.resource.data && request.resource.data.ticketRef is string && request.resource.data.ticketRef.size() >= 3))) ||
            // Clôture après validation de livraison
            (request.resource.data.status == 'completed' &&
             resource.data.status == 'delivering')

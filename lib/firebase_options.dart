@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 class DefaultFirebaseOptions {
+  static const String rtdbUrl =
+      'https://dili-express-default-rtdb.europe-west1.firebasedatabase.app';
+
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
       return web;
@@ -31,7 +34,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '273784230349',
     projectId: 'dili-express',
     authDomain: 'dili-express.firebaseapp.com',
-    storageBucket: 'dili-express.firebasestorage.app',
+    databaseURL: rtdbUrl,
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -39,7 +42,7 @@ class DefaultFirebaseOptions {
     appId: '1:273784230349:android:1317b52fa41defee973484',
     messagingSenderId: '273784230349',
     projectId: 'dili-express',
-    storageBucket: 'dili-express.firebasestorage.app',
+    databaseURL: rtdbUrl,
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -47,8 +50,8 @@ class DefaultFirebaseOptions {
     appId: '1:273784230349:ios:com_ghdinteractivestudio_dili_express',
     messagingSenderId: '273784230349',
     projectId: 'dili-express',
-    storageBucket: 'dili-express.firebasestorage.app',
     iosBundleId: 'com.ghdinteractivestudio.dili_express',
+    databaseURL: rtdbUrl,
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -56,8 +59,8 @@ class DefaultFirebaseOptions {
     appId: '1:273784230349:ios:com_ghdinteractivestudio_dili_express',
     messagingSenderId: '273784230349',
     projectId: 'dili-express',
-    storageBucket: 'dili-express.firebasestorage.app',
     iosBundleId: 'com.ghdinteractivestudio.dili_express',
+    databaseURL: rtdbUrl,
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -65,6 +68,6 @@ class DefaultFirebaseOptions {
     appId: '1:273784230349:web:dili_express_windows',
     messagingSenderId: '273784230349',
     projectId: 'dili-express',
-    storageBucket: 'dili-express.firebasestorage.app',
+    databaseURL: rtdbUrl,
   );
 }

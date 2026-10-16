@@ -51,10 +51,10 @@ class ErrandModel {
   final double? ticketAmount;
   final double negotiatedCommission;
   final String? ticketPhotoUrl;
+  final String? ticketRef; // Référence / numéro de ticket de caisse vérifié (Spark sans Storage)
   final String status; // 'pending', 'accepted', 'shopping', 'delivering', 'completed', 'cancelled'
   final String securePin; // Code PIN à 4 chiffres sécurisé
-  final DateTime?
-  pinExpiresAt; // Expiration temporelle du code PIN (ex: 15-30 min)
+  final DateTime? pinExpiresAt; // Expiration temporelle du code PIN (ex: 15-30 min)
   final int pinFailedAttempts; // Protection anti-brute force (max 3 tentatives)
   final bool pinLocked; // Verrouillage après échecs répétés
   final GeoPoint? shopperLocation;
@@ -79,6 +79,7 @@ class ErrandModel {
     this.ticketAmount,
     this.negotiatedCommission = 0.0,
     this.ticketPhotoUrl,
+    this.ticketRef,
     this.status = ErrandStatus.pending,
     required this.securePin,
     this.pinExpiresAt,
@@ -118,11 +119,12 @@ class ErrandModel {
   double get totalAmount => (ticketAmount ?? 0.0) + negotiatedCommission;
 
   /// Indique si le justificatif et le montant sont validés pour autoriser le passage à "delivering".
+  /// Conforme Spark sans Storage : Requiert à la fois le montant exact (>0) ET un justificatif probant (référence de caisse ou justificatif photo/URI).
   bool get isReceiptValidated =>
       ticketAmount != null &&
       ticketAmount! > 0 &&
-      ticketPhotoUrl != null &&
-      ticketPhotoUrl!.isNotEmpty;
+      ((ticketRef != null && ticketRef!.trim().length >= 3) ||
+          (ticketPhotoUrl != null && ticketPhotoUrl!.isNotEmpty));
 
   /// Valide si une transition vers [newStatus] est légale.
   bool canTransitionTo(String newStatus) {
@@ -171,6 +173,7 @@ class ErrandModel {
       negotiatedCommission:
           (data['negotiatedCommission'] as num?)?.toDouble() ?? 0.0,
       ticketPhotoUrl: data['ticketPhotoUrl'],
+      ticketRef: data['ticketRef'],
       status: data['status'] ?? ErrandStatus.pending,
       securePin: data['securePin']?.toString() ?? '',
       pinExpiresAt: (data['pinExpiresAt'] is Timestamp)
@@ -219,7 +222,8 @@ class ErrandModel {
       'estimatedBudget': estimatedBudget,
       'ticketAmount': ticketAmount,
       'negotiatedCommission': negotiatedCommission,
-      'ticketPhotoUrl': ticketPhotoUrl,
+      if (ticketPhotoUrl != null) 'ticketPhotoUrl': ticketPhotoUrl,
+      if (ticketRef != null) 'ticketRef': ticketRef,
       'status': status,
       'securePin': securePin,
       if (pinExpiresAt != null)
@@ -253,6 +257,7 @@ class ErrandModel {
     double? ticketAmount,
     double? negotiatedCommission,
     String? ticketPhotoUrl,
+    String? ticketRef,
     String? status,
     String? securePin,
     DateTime? pinExpiresAt,
@@ -280,6 +285,7 @@ class ErrandModel {
       ticketAmount: ticketAmount ?? this.ticketAmount,
       negotiatedCommission: negotiatedCommission ?? this.negotiatedCommission,
       ticketPhotoUrl: ticketPhotoUrl ?? this.ticketPhotoUrl,
+      ticketRef: ticketRef ?? this.ticketRef,
       status: status ?? this.status,
       securePin: securePin ?? this.securePin,
       pinExpiresAt: pinExpiresAt ?? this.pinExpiresAt,
