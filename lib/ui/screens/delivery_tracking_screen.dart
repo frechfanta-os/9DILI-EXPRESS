@@ -2,31 +2,35 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../models/errand_model.dart';
 import '../../services/errand_service.dart';
 import '../../services/map_tracking_service.dart';
+import '../../services/realtime_tracking_service.dart';
 import '../theme/app_theme.dart';
 
-/// Section 5 : SUIVI GPS ET REMISE (Delivery Tracking & Handshake).
-/// Inclut :
-/// - Carte/Radar visuel de position
-/// - Temps estimé (ETA)
-/// - Progression de la course
-/// - Boutons d'appel et de message direct
-/// - États d'actualisation réseau et résilience hors-ligne
-/// - Remise sécurisée : QR Code, Code PIN à 4 chiffres, Expiration, Paiement en espèces
+/// Section 5 : SUIVI GPS TEMPS RÉEL (RTDB) ET REMISE SÉCURISÉE (Handshake).
+/// Architecture Spark optimisée :
+/// - Les coordonnées GPS temps réel sont diffusées et lues exclusivement via Firebase Realtime Database.
+/// - Throttling automatique (intervalle min 8 secondes / 10 mètres) pour respecter le quota Spark gratuit.
+/// - Purge et désinscription systématiques lors de la clôture de la mission.
+/// - Gestion des états : chargement, GPS indisponible, réseau dégradé et mission terminée.
 class DeliveryTrackingScreen extends StatefulWidget {
   final ErrandModel errand;
   final ErrandService errandService;
+  final RealtimeTrackingService? trackingService;
+  final MapTrackingService? mapTrackingService;
   final bool isShopperView;
 
   const DeliveryTrackingScreen({
     super.key,
     required this.errand,
     required this.errandService,
+    this.trackingService,
+    this.mapTrackingService,
     this.isShopperView = false,
   });
 
@@ -35,8 +39,18 @@ class DeliveryTrackingScreen extends StatefulWidget {
 }
 
 class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
+  late final RealtimeTrackingService _trackingService;
+  late final MapTrackingService _mapTrackingService;
+
   bool _isNetworkOnline = true;
+  bool _isGpsAvailable = true;
+  bool _isLoadingGps = false;
+  LatLng? _liveShopperPosition;
+
+  StreamSubscription<Position>? _positionSubscription;
+  StreamSubscription<LatLng?>? _rtdbSubscription;
   Timer? _countdownTimer;
+
   int _pinExpirationSeconds = 900; // 15 minutes d'expiration du code
   bool _cashPaymentConfirmed = false;
   bool _isCompleting = false;
@@ -44,19 +58,100 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
   @override
   void initState() {
     super.initState();
+    _trackingService = widget.trackingService ?? RealtimeTrackingService();
+    _mapTrackingService = widget.mapTrackingService ?? MapTrackingService();
+
+    // Initialisation de la position initiale
+    if (widget.errand.shopperLocation != null) {
+      _liveShopperPosition = LatLng(
+        widget.errand.shopperLocation!.latitude,
+        widget.errand.shopperLocation!.longitude,
+      );
+    }
+
     _startCountdown();
+    _initializeLiveTracking();
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _positionSubscription?.cancel();
+    _rtdbSubscription?.cancel();
     super.dispose();
+  }
+
+  /// Initialise le flux de position adapté au rôle (Shopper diffuseur vs Client observateur).
+  Future<void> _initializeLiveTracking() async {
+    if (widget.isShopperView) {
+      // 1. Vue Shopper : Demande de permission et streaming matériel GPS
+      setState(() => _isLoadingGps = true);
+      final hasPermission = await _mapTrackingService.checkAndRequestPermission();
+
+      if (!hasPermission) {
+        if (mounted) {
+          setState(() {
+            _isGpsAvailable = false;
+            _isLoadingGps = false;
+          });
+        }
+        return;
+      }
+
+      final positionStream = _mapTrackingService.startMissionTracking(
+        errandId: widget.errand.errandId,
+      );
+
+      if (positionStream != null) {
+        _positionSubscription = positionStream.listen(
+          (pos) async {
+            if (!mounted) return;
+            final latLng = LatLng(pos.latitude, pos.longitude);
+            setState(() {
+              _liveShopperPosition = latLng;
+              _isGpsAvailable = true;
+              _isLoadingGps = false;
+            });
+
+            // Diffusion vers Realtime Database avec throttling Spark 8s
+            final shopperUid = widget.errand.shopperId;
+            if (shopperUid != null && shopperUid.isNotEmpty) {
+              await _trackingService.pushActiveErrandLocation(
+                errandId: widget.errand.errandId,
+                shopperId: shopperUid,
+                clientId: widget.errand.clientId,
+                latitude: pos.latitude,
+                longitude: pos.longitude,
+              );
+            }
+          },
+          onError: (_) {
+            if (mounted) {
+              setState(() => _isGpsAvailable = false);
+            }
+          },
+        );
+      }
+    } else {
+      // 2. Vue Client : Écoute en direct du nœud RTDB de la course
+      _rtdbSubscription = _trackingService
+          .streamActiveErrandLocation(widget.errand.errandId)
+          .listen((liveCoords) {
+        if (mounted && liveCoords != null) {
+          setState(() {
+            _liveShopperPosition = liveCoords;
+          });
+        }
+      });
+    }
   }
 
   void _startCountdown() {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_pinExpirationSeconds > 0) {
-        setState(() => _pinExpirationSeconds--);
+        if (mounted) {
+          setState(() => _pinExpirationSeconds--);
+        }
       } else {
         timer.cancel();
       }
@@ -125,70 +220,70 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                         ],
                       ),
                       child: QrImageView(
-                        data: '9DILI:${errand.errandId}:${errand.securePin}',
+                        data: '9DILI_DELIVERY:${errand.errandId}:${errand.securePin}',
                         version: QrVersions.auto,
                         size: 160.0,
-                        eyeStyle: const QrEyeStyle(
-                          eyeShape: QrEyeShape.square,
-                          color: AppTheme.primaryOrange,
-                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.violetSurface,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'PIN : ${errand.securePin}',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          letterSpacing: 6,
-                          fontWeight: FontWeight.w900,
-                          color: AppTheme.violetAccent,
-                        ),
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppTheme.violetSurface,
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Expire dans : $_formattedExpiration',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textMuted,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'VOTRE CODE PIN DE REMISE',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.violetAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          errand.securePin,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 6,
+                            color: AppTheme.textDark,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Expire dans : $_formattedExpiration',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 14),
                   const Text(
-                    'Instructions : Présentez ce QR code ou dictez le code PIN à votre shoppeur pour valider la réception et lui remettre le montant en espèces.',
+                    'Communiquez ce code uniquement lors de la réception des articles et du ticket original.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
                   ),
-                ]
-                // Vue Shoppeur : Valide le PIN ou scanne le QR
-                else ...[
+                ] else ...[
+                  // Vue Shopper : Saisie du PIN fourni par le client
                   const Text(
-                    'Saisissez le code PIN à 4 chiffres communiqué par le client :',
-                    style: TextStyle(fontSize: 13, color: AppTheme.textMuted),
+                    'Code PIN fourni par le client :',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   TextField(
                     controller: pinInputCtrl,
                     keyboardType: TextInputType.number,
                     maxLength: 4,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 26,
+                      fontSize: 24,
                       letterSpacing: 8,
                       fontWeight: FontWeight.bold,
                     ),
@@ -197,15 +292,14 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                       counterText: '',
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
-                  // Confirmation de paiement en espèces
+                  // Confirmation de l'encaissement en espèces et remise ticket
                   CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
                     title: Text(
-                      'Paiement en espèces reçu (${errand.totalAmount.toStringAsFixed(2)} DA)',
+                      'Paiement espèces encaissé (${errand.totalAmount.toStringAsFixed(2)} DA) & Ticket remis',
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -246,22 +340,32 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                               Navigator.pop(sheetCtx);
 
                               if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  backgroundColor: result.isSuccess
-                                      ? AppTheme.accentGreen
-                                      : AppTheme.errorRed,
-                                  content: Text(
-                                    result.isSuccess
-                                        ? 'Course clôturée et paiement validé ! 🎉'
-                                        : result.message,
-                                  ),
-                                ),
-                              );
 
                               if (result.isSuccess) {
+                                // Nettoyage de l'abonnement et de la position RTDB
+                                await _trackingService
+                                    .cleanUpActiveErrand(errand.errandId);
+                                await _mapTrackingService.stopTracking();
+
+                                if (!mounted) return;
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: AppTheme.accentGreen,
+                                    content: Text(
+                                      'Course clôturée et paiement validé ! 🎉',
+                                    ),
+                                  ),
+                                );
                                 Navigator.of(context)
                                     .popUntil((route) => route.isFirst);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: AppTheme.errorRed,
+                                    content: Text(result.message),
+                                  ),
+                                );
                               }
                             }
                           },
@@ -291,7 +395,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
         backgroundColor: AppTheme.primaryOrange,
         content: Text(
           phone != null && phone.isNotEmpty
-              ? 'Appel vers le client/shoppeur : $phone 📞'
+              ? 'Appel vers le correspondant : $phone 📞'
               : 'Lancement de l\'appel sécurisé via le relais 9DILI 📞',
         ),
       ),
@@ -314,6 +418,22 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
       builder: (context, snapshot) {
         final errand = snapshot.data ?? widget.errand;
 
+        // Position par défaut sur Alger centre si non géolocalisé
+        final shopperPos = _liveShopperPosition ??
+            (errand.shopperLocation != null
+                ? LatLng(
+                    errand.shopperLocation!.latitude,
+                    errand.shopperLocation!.longitude,
+                  )
+                : const LatLng(36.7538, 3.0588));
+
+        final destPos = errand.deliveryGeoPoint != null
+            ? LatLng(
+                errand.deliveryGeoPoint!.latitude,
+                errand.deliveryGeoPoint!.longitude,
+              )
+            : const LatLng(36.7450, 3.0300);
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('Suivi en Direct 📍'),
@@ -334,7 +454,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
           ),
           body: Column(
             children: [
-              // Bandeau réseau / sync
+              // 1. Bandeau alerte réseau dégradé
               if (!_isNetworkOnline)
                 Container(
                   color: AppTheme.warningOrange.withValues(alpha: 0.15),
@@ -364,7 +484,37 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                   ),
                 ),
 
-              // Carte / Radar Simulation
+              // 2. Bandeau alerte GPS indisponible
+              if (!_isGpsAvailable && widget.isShopperView)
+                Container(
+                  color: AppTheme.errorRed.withValues(alpha: 0.15),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.location_off,
+                        size: 16,
+                        color: AppTheme.errorRed,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Position GPS indisponible — Veuillez activer la localisation pour diffuser votre trajet.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppTheme.errorRed,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // 3. Carte temps réel OpenStreetMap
               Expanded(
                 flex: 5,
                 child: Container(
@@ -372,32 +522,58 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                   color: const Color(0xFFE2E8F0),
                   child: Stack(
                     children: [
-                      // Carte OpenStreetMap dynamique via FlutterMap
                       FlutterMap(
                         options: MapOptions(
-                          initialCenter: errand.shopperLocation != null
-                              ? LatLng(
-                                  errand.shopperLocation!.latitude,
-                                  errand.shopperLocation!.longitude,
-                                )
-                              : const LatLng(36.7538, 3.0588), // Alger centre
+                          initialCenter: shopperPos,
                           initialZoom: 14.5,
                         ),
                         children: [
                           MapTrackingService.buildOsmTileLayer(),
                           MapTrackingService.buildTrackingMarkers(
-                            shopperPosition: errand.shopperLocation != null
-                                ? LatLng(
-                                    errand.shopperLocation!.latitude,
-                                    errand.shopperLocation!.longitude,
-                                  )
-                                : const LatLng(36.7538, 3.0588),
-                            destinationPosition: const LatLng(36.7450, 3.0300),
+                            shopperPosition: shopperPos,
+                            destinationPosition: destPos,
                           ),
                         ],
                       ),
 
-                      // Attribution légale OpenStreetMap obligatoire
+                      // Indicateur de chargement GPS initial
+                      if (_isLoadingGps)
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              children: [
+                                SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppTheme.primaryOrange,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Signal GPS...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                      // Attribution légale OpenStreetMap
                       Positioned(
                         bottom: 6,
                         right: 8,
@@ -422,43 +598,44 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                       ),
 
                       // Badge ETA (Temps estimé)
-                      Positioned(
-                        top: 16,
-                        left: 16,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.08),
-                                blurRadius: 8,
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.timer,
-                                size: 18,
-                                color: AppTheme.primaryOrange,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'ETA : ${errand.etaMinutes ?? 12} min',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13,
+                      if (!_isLoadingGps)
+                        Positioned(
+                          top: 16,
+                          left: 16,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 8,
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.timer,
+                                  size: 18,
+                                  color: AppTheme.primaryOrange,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'ETA : ${errand.etaMinutes ?? 12} min',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
 
                       // Boutons d'action rapides : Appeler & Message
                       Positioned(
@@ -493,7 +670,7 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                 ),
               ),
 
-              // Panneau inférieur : Progression & Handshake
+              // 4. Panneau inférieur : Progression & Handshake
               Expanded(
                 flex: 4,
                 child: Container(
@@ -524,13 +701,16 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Total à régler en espèces :',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                            const Expanded(
+                              child: Text(
+                                'Total à régler en espèces :',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Text(
                               '${errand.totalAmount.toStringAsFixed(2)} DA',
                               style: const TextStyle(
@@ -588,29 +768,35 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: List.generate(steps.length, (index) {
         final isDone = index <= currentIndex;
-        return Column(
-          children: [
-            CircleAvatar(
-              radius: 12,
-              backgroundColor: isDone
-                  ? AppTheme.accentGreen
-                  : const Color(0xFFE2E8F0),
-              child: Icon(
-                isDone ? Icons.check : Icons.circle,
-                size: 14,
-                color: isDone ? Colors.white : AppTheme.textMuted,
+        return Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 12,
+                backgroundColor: isDone
+                    ? AppTheme.accentGreen
+                    : const Color(0xFFE2E8F0),
+                child: Icon(
+                  isDone ? Icons.check : Icons.circle,
+                  size: 14,
+                  color: isDone ? Colors.white : AppTheme.textMuted,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              steps[index],
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
-                color: isDone ? AppTheme.textDark : AppTheme.textMuted,
+              const SizedBox(height: 4),
+              Text(
+                steps[index],
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: isDone ? FontWeight.bold : FontWeight.normal,
+                  color: isDone ? AppTheme.textDark : AppTheme.textMuted,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       }),
     );

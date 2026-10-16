@@ -74,14 +74,17 @@ class PinValidationResult {
 
 /// Service sécurisé des courses 9DILI EXPRESS avec contrôle d'intégrité, concurrence et anti-brute force.
 class ErrandService {
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
   final OfflinePinCacheService _pinCacheService;
 
   ErrandService({
     FirebaseFirestore? firestore,
     OfflinePinCacheService? pinCacheService,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+  }) : _customFirestore = firestore,
        _pinCacheService = pinCacheService ?? OfflinePinCacheService();
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
 
   CollectionReference<Map<String, dynamic>> get _errandsRef =>
       _firestore.collection('errands');
