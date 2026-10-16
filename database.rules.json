@@ -15,15 +15,31 @@
       "$shopperId": {
         ".read": "auth != null",
         ".write": "auth != null && auth.uid === $shopperId",
-        ".validate": "newData.hasChildren(['latitude', 'longitude', 'timestamp']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && newData.child('timestamp').isNumber() && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance')"
+        ".validate": "newData.hasChildren(['latitude', 'longitude']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance')"
+      }
+    },
+
+    "locations": {
+      "$shopperId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $shopperId",
+        ".validate": "newData.hasChildren(['latitude', 'longitude']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance')"
       }
     },
 
     "errand_tracking": {
       "$errandId": {
-        ".read": "auth != null && (data.child('clientId').val() === auth.uid || data.child('shopperId').val() === auth.uid)",
-        ".write": "auth != null && ((!data.exists() && (newData.child('clientId').val() === auth.uid || newData.child('shopperId').val() === auth.uid)) || data.child('shopperId').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['latitude', 'longitude', 'updatedAt', 'shopperId', 'clientId']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && newData.child('updatedAt').isNumber() && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance')"
+        ".read": "auth != null && (!data.exists() || data.child('clientId').val() === auth.uid || data.child('shopperId').val() === auth.uid)",
+        ".write": "auth != null && ((!data.exists() && (newData.child('clientId').val() === auth.uid || newData.child('shopperId').val() === auth.uid)) || (data.exists() && (!newData.exists() || data.child('shopperId').val() === auth.uid)))",
+        ".validate": "!newData.exists() || (newData.hasChildren(['latitude', 'longitude', 'shopperId', 'clientId']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance'))"
+      }
+    },
+
+    "active_errands": {
+      "$errandId": {
+        ".read": "auth != null && (!data.exists() || data.child('clientId').val() === auth.uid || data.child('shopperId').val() === auth.uid)",
+        ".write": "auth != null && ((!data.exists() && (newData.child('clientId').val() === auth.uid || newData.child('shopperId').val() === auth.uid)) || (data.exists() && (!newData.exists() || data.child('shopperId').val() === auth.uid)))",
+        ".validate": "!newData.exists() || (newData.hasChildren(['latitude', 'longitude', 'shopperId', 'clientId']) && newData.child('latitude').isNumber() && newData.child('latitude').val() >= -90 && newData.child('latitude').val() <= 90 && newData.child('longitude').isNumber() && newData.child('longitude').val() >= -180 && newData.child('longitude').val() <= 180 && !newData.hasChild('role') && !newData.hasChild('availableCash') && !newData.hasChild('rating') && !newData.hasChild('admin') && !newData.hasChild('balance'))"
       }
     }
   }

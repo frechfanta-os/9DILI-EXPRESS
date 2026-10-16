@@ -9,11 +9,13 @@ import 'package:latlong2/latlong.dart';
 /// - Écoutes fermées dès que la vue n'est plus active.
 /// - Déconnexion automatique via onDisconnect().
 class RealtimeTrackingService {
-  final FirebaseDatabase? _database;
+  final FirebaseDatabase? _customDatabase;
 
-  RealtimeTrackingService({FirebaseDatabase? database}) : _database = database;
+  RealtimeTrackingService({FirebaseDatabase? database})
+      : _customDatabase = database;
 
-  FirebaseDatabase get database => _database ?? FirebaseDatabase.instance;
+  FirebaseDatabase get database =>
+      _customDatabase ?? FirebaseDatabase.instance;
 
   DateTime? _lastGpsWriteTime;
   static const Duration minWriteInterval = Duration(seconds: 8);

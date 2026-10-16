@@ -72,6 +72,10 @@ service cloud.firestore {
            // Prise en charge en magasin
            (request.resource.data.status == 'shopping' &&
             resource.data.status == 'accepted') ||
+           // Enregistrement du justificatif de caisse en magasin (Spark sans Storage)
+           (request.resource.data.status == 'shopping' &&
+            resource.data.status == 'shopping' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ticketAmount', 'ticketRef', 'ticketPhotoUrl', 'updatedAt'])) ||
            // Passage au statut 'delivering' UNIQUEMENT avec ticket et justificatif validés (Spark sans Storage)
            (request.resource.data.status == 'delivering' &&
             resource.data.status == 'shopping' &&
