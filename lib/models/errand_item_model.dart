@@ -29,6 +29,10 @@ class ErrandItemModel {
   final String notes;
   final String status; // 'pending', 'found', 'replaced', 'unavailable'
   final String? replacementNote;
+  final bool isCustom; // Article personnalisé / hors catalogue
+  final String? photoUrl; // Photo de référence de l'article (caméra ou galerie)
+  final String? brand; // Marque / fabricant
+  final double? estimatedPrice; // Budget unitaire estimé (DA)
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -40,6 +44,10 @@ class ErrandItemModel {
     this.notes = '',
     this.status = ErrandItemStatus.pending,
     this.replacementNote,
+    this.isCustom = false,
+    this.photoUrl,
+    this.brand,
+    this.estimatedPrice,
     this.createdAt,
     this.updatedAt,
   });
@@ -61,6 +69,10 @@ class ErrandItemModel {
       notes: data['notes'] ?? '',
       status: data['status'] ?? ErrandItemStatus.pending,
       replacementNote: data['replacementNote'],
+      isCustom: data['isCustom'] == true,
+      photoUrl: data['photoUrl'] as String?,
+      brand: data['brand'] as String?,
+      estimatedPrice: (data['estimatedPrice'] as num?)?.toDouble(),
       createdAt: (data['createdAt'] is Timestamp)
           ? (data['createdAt'] as Timestamp).toDate()
           : null,
@@ -86,6 +98,10 @@ class ErrandItemModel {
       'notes': notes,
       'status': status,
       'replacementNote': replacementNote,
+      'isCustom': isCustom,
+      if (photoUrl != null) 'photoUrl': photoUrl,
+      if (brand != null) 'brand': brand,
+      if (estimatedPrice != null) 'estimatedPrice': estimatedPrice,
       'createdAt': createdAt != null
           ? Timestamp.fromDate(createdAt!)
           : FieldValue.serverTimestamp(),
@@ -101,6 +117,10 @@ class ErrandItemModel {
     String? notes,
     String? status,
     String? replacementNote,
+    bool? isCustom,
+    String? photoUrl,
+    String? brand,
+    double? estimatedPrice,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -112,6 +132,10 @@ class ErrandItemModel {
       notes: notes ?? this.notes,
       status: status ?? this.status,
       replacementNote: replacementNote ?? this.replacementNote,
+      isCustom: isCustom ?? this.isCustom,
+      photoUrl: photoUrl ?? this.photoUrl,
+      brand: brand ?? this.brand,
+      estimatedPrice: estimatedPrice ?? this.estimatedPrice,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -119,6 +143,6 @@ class ErrandItemModel {
 
   @override
   String toString() {
-    return 'ErrandItemModel(id: $itemId, name: $name, qty: $quantity $unit, status: $status)';
+    return 'ErrandItemModel(id: $itemId, name: $name, qty: $quantity $unit, custom: $isCustom, status: $status)';
   }
 }

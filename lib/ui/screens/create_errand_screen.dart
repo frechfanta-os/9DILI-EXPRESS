@@ -1,11 +1,18 @@
+import 'dart:io';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../models/errand_model.dart';
 import '../../models/errand_item_model.dart';
 import '../../models/product_model.dart';
 import '../../services/errand_service.dart';
+import '../../services/map_tracking_service.dart';
 import '../../services/product_catalog_service.dart';
 import '../theme/app_theme.dart';
 
@@ -17,6 +24,7 @@ class CreateErrandScreen extends StatefulWidget {
   final ProductCatalogService? catalogService;
   final String? initialAddress;
   final String? initialStoreName;
+  final GeoPoint? initialGeoPoint;
 
   const CreateErrandScreen({
     super.key,
@@ -25,6 +33,7 @@ class CreateErrandScreen extends StatefulWidget {
     this.catalogService,
     this.initialAddress,
     this.initialStoreName,
+    this.initialGeoPoint,
   });
 
   @override
@@ -37,6 +46,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
   late final TextEditingController _storeCtrl;
   late final TextEditingController _addressCtrl;
   late final TextEditingController _searchCtrl;
+
+  GeoPoint? _deliveryGeoPoint;
+  bool _isFetchingGps = false;
 
   String? _selectedCategory; // null = Tous les rayons
   final Map<ProductModel, int> _cart = {};
@@ -51,8 +63,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     super.initState();
     _catalogService = widget.catalogService ?? ProductCatalogService.instance;
     _isLoading = !_catalogService.isLoaded;
+    _deliveryGeoPoint = widget.initialGeoPoint;
     _storeCtrl = TextEditingController(
-      text: widget.initialStoreName ?? 'Supermarché / Supérette locale',
+      text: widget.initialStoreName ?? '',
     );
     _addressCtrl = TextEditingController(
       text: widget.initialAddress ?? 'Cité 1000 Logts, Bât 12, Hydra, Alger',
@@ -114,7 +127,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
   }
 
   int get _totalCartCount {
-    int total = _customItems.length;
+    int total = 0;
+    for (final custom in _customItems) {
+      total += custom.quantity.round();
+    }
     for (final count in _cart.values) {
       total += count;
     }
@@ -130,9 +146,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       sum += (unitPrice * qty);
     }
     for (final custom in _customItems) {
-      sum += (custom.quantity * 200.0);
+      final unitPrice = custom.estimatedPrice ?? 200.0;
+      sum += (custom.quantity * unitPrice);
     }
-    return sum > 0 ? sum : 2500.0;
+    return sum;
   }
 
   void _addToCart(ProductModel product) {
@@ -153,9 +170,156 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     });
   }
 
-  void _openAddCustomItemDialog() {
+  void _removeEntirelyFromCart(ProductModel product) {
+    setState(() {
+      _cart.remove(product);
+    });
+  }
+
+  void _removeCustomItem(ErrandItemModel item) {
+    setState(() {
+      _customItems.remove(item);
+    });
+  }
+
+  void _updateCustomItemQty(ErrandItemModel item, double newQty) {
+    setState(() {
+      final idx = _customItems.indexOf(item);
+      if (idx != -1) {
+        if (newQty <= 0) {
+          _customItems.removeAt(idx);
+        } else {
+          _customItems[idx] = item.copyWith(quantity: newQty);
+        }
+      }
+    });
+  }
+
+  // ==========================================
+  // AJOUT DE PRODUIT PAR PHOTOGRAPHIE
+  // ==========================================
+
+  void _openPhotoChoiceSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.photo_camera, color: AppTheme.primaryOrange),
+                  SizedBox(width: 10),
+                  Text(
+                    'Photographier un produit 📷',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Prenez une photo nette du produit ou choisissez-en une depuis votre galerie.',
+                style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.violetSurface,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.camera_alt, color: AppTheme.violetAccent),
+                ),
+                title: const Text('Prendre une photo'),
+                subtitle: const Text('Ouvrir l\'appareil photo'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickProductPhoto(ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.violetSurface,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library, color: AppTheme.violetAccent),
+                ),
+                title: const Text('Choisir depuis la galerie'),
+                subtitle: const Text('Sélecteur d\'images Android'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickProductPhoto(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickProductPhoto(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+
+      if (image == null) return;
+
+      final file = File(image.path);
+      if (await file.exists()) {
+        final length = await file.length();
+        if (length > 5 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: AppTheme.errorRed,
+                content: Text(
+                  'L\'image est trop volumineuse (> 5 Mo). Veuillez choisir une autre photo.',
+                ),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      if (!mounted) return;
+      _openPhotoProductFormDialog(image.path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppTheme.errorRed,
+            content: Text('Impossible d\'accéder à la photo : $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  void _openPhotoProductFormDialog(String initialImagePath) {
+    String currentImagePath = initialImagePath;
     final nameCtrl = TextEditingController();
     final qtyCtrl = TextEditingController(text: '1');
+    final detailsCtrl = TextEditingController();
+    final budgetCtrl = TextEditingController();
     String unit = ErrandItemUnit.piece;
 
     showDialog(
@@ -165,70 +329,114 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
-              Icon(Icons.edit_note, color: AppTheme.primaryOrange),
+              Icon(Icons.camera_alt, color: AppTheme.primaryOrange),
               SizedBox(width: 8),
-              Text('Article sur mesure ✍️', style: TextStyle(fontSize: 16)),
+              Text('Article avec photo 📷', style: TextStyle(fontSize: 16)),
             ],
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Ajoutez un article introuvable dans le catalogue (ex: pain artisanal, produit à la coupe...) :',
-                style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: nameCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Nom de l\'article *',
-                  hintText: 'Ex: 2 Baguettes traditionnelles',
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(currentImagePath),
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      height: 120,
+                      color: Colors.grey.shade200,
+                      child: const Center(
+                        child: Icon(Icons.image, size: 40, color: Colors.grey),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: qtyCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Quantité'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 3,
-                    child: DropdownButtonFormField<String>(
-                      initialValue: unit,
-                      decoration: const InputDecoration(labelText: 'Unité'),
-                      items: const [
-                        DropdownMenuItem(
-                          value: ErrandItemUnit.piece,
-                          child: Text('x (Pièce)'),
-                        ),
-                        DropdownMenuItem(
-                          value: ErrandItemUnit.kilogram,
-                          child: Text('kg (Poids)'),
-                        ),
-                        DropdownMenuItem(
-                          value: ErrandItemUnit.liter,
-                          child: Text('L (Volume)'),
-                        ),
-                        DropdownMenuItem(
-                          value: ErrandItemUnit.pack,
-                          child: Text('Pack'),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setDialogState(() => unit = val);
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () async {
+                        final picker = ImagePicker();
+                        final img = await picker.pickImage(
+                          source: ImageSource.gallery,
+                          maxWidth: 1024,
+                          maxHeight: 1024,
+                          imageQuality: 80,
+                        );
+                        if (img != null) {
+                          setDialogState(() => currentImagePath = img.path);
+                        }
                       },
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('Changer de photo', style: TextStyle(fontSize: 12)),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Nom du produit *',
+                    hintText: 'Ex: Café soluble 200g',
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Quantité *'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 3,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: unit,
+                        decoration: const InputDecoration(labelText: 'Unité'),
+                        items: const [
+                          DropdownMenuItem(value: ErrandItemUnit.piece, child: Text('x (Pièce)')),
+                          DropdownMenuItem(value: ErrandItemUnit.kilogram, child: Text('kg (Poids)')),
+                          DropdownMenuItem(value: 'g', child: Text('g (Grammes)')),
+                          DropdownMenuItem(value: ErrandItemUnit.liter, child: Text('L (Volume)')),
+                          DropdownMenuItem(value: 'mL', child: Text('mL (Volume)')),
+                          DropdownMenuItem(value: ErrandItemUnit.pack, child: Text('Pack')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) setDialogState(() => unit = val);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: detailsCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Marque, format, détails (Facultatif)',
+                    hintText: 'Ex: Bocal en verre, marque Nescafé',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: budgetCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Budget estimé en DA (Facultatif)',
+                    hintText: 'Ex: 650',
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -241,17 +449,207 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
               ),
               onPressed: () {
                 final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: AppTheme.errorRed,
+                      content: Text('Veuillez renseigner le nom du produit.'),
+                    ),
+                  );
+                  return;
+                }
                 final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1.0;
+                final budget = double.tryParse(budgetCtrl.text.trim());
+                final details = detailsCtrl.text.trim();
 
                 setState(() {
                   _customItems.add(
                     ErrandItemModel(
-                      itemId: '',
+                      itemId: 'custom_${DateTime.now().millisecondsSinceEpoch}',
                       name: name,
-                      quantity: qty,
+                      quantity: qty > 0 ? qty : 1.0,
                       unit: unit,
-                      notes: 'Article hors catalogue client',
+                      notes: details,
+                      isCustom: true,
+                      photoUrl: currentImagePath,
+                      estimatedPrice: budget,
+                      status: ErrandItemStatus.pending,
+                    ),
+                  );
+                });
+                Navigator.pop(ctx);
+              },
+              child: const Text('Ajouter au panier'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================
+  // AJOUT DE PRODUIT PAR SAISIE MANUELLE
+  // ==========================================
+
+  void _openAddCustomItemDialog() {
+    final nameCtrl = TextEditingController();
+    final qtyCtrl = TextEditingController(text: '1');
+    final detailsCtrl = TextEditingController();
+    final budgetCtrl = TextEditingController();
+    String unit = ErrandItemUnit.piece;
+    String? optionalPhotoPath;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.edit_note, color: AppTheme.primaryOrange),
+              SizedBox(width: 8),
+              Text('Article personnalisé ✍️', style: TextStyle(fontSize: 16)),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Ajoutez un article introuvable dans le catalogue (ex: pain artisanal, produit à la coupe...) :',
+                  style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: nameCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Nom de l\'article *',
+                    hintText: 'Ex: 2 Baguettes traditionnelles',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Quantité *'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 3,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: unit,
+                        decoration: const InputDecoration(labelText: 'Unité'),
+                        items: const [
+                          DropdownMenuItem(value: ErrandItemUnit.piece, child: Text('x (Pièce)')),
+                          DropdownMenuItem(value: ErrandItemUnit.kilogram, child: Text('kg (Poids)')),
+                          DropdownMenuItem(value: 'g', child: Text('g (Grammes)')),
+                          DropdownMenuItem(value: ErrandItemUnit.liter, child: Text('L (Volume)')),
+                          DropdownMenuItem(value: 'mL', child: Text('mL (Volume)')),
+                          DropdownMenuItem(value: ErrandItemUnit.pack, child: Text('Pack')),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) setDialogState(() => unit = val);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: detailsCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Marque ou description (Facultatif)',
+                    hintText: 'Ex: Bien cuites, marque spécifique',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: budgetCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Budget estimé en DA (Facultatif)',
+                    hintText: 'Ex: 40',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (optionalPhotoPath != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.file(
+                      File(optionalPhotoPath!),
+                      height: 100,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final picker = ImagePicker();
+                    final img = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 1024,
+                      maxHeight: 1024,
+                      imageQuality: 80,
+                    );
+                    if (img != null) {
+                      setDialogState(() => optionalPhotoPath = img.path);
+                    }
+                  },
+                  icon: const Icon(Icons.add_a_photo, size: 16),
+                  label: Text(
+                    optionalPhotoPath != null
+                        ? 'Changer la photo'
+                        : 'Joindre une photo (Optionnel)',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryOrange,
+              ),
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: AppTheme.errorRed,
+                      content: Text('Veuillez renseigner le nom du produit.'),
+                    ),
+                  );
+                  return;
+                }
+                final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1.0;
+                final budget = double.tryParse(budgetCtrl.text.trim());
+
+                setState(() {
+                  _customItems.add(
+                    ErrandItemModel(
+                      itemId: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+                      name: name,
+                      quantity: qty > 0 ? qty : 1.0,
+                      unit: unit,
+                      notes: detailsCtrl.text.trim(),
+                      isCustom: true,
+                      photoUrl: optionalPhotoPath,
+                      estimatedPrice: budget,
+                      status: ErrandItemStatus.pending,
                     ),
                   );
                 });
@@ -263,6 +661,146 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _fetchCurrentGps(StateSetter setSheetState) async {
+    setSheetState(() => _isFetchingGps = true);
+    try {
+      final enabled = await Geolocator.isLocationServiceEnabled();
+      if (!enabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: AppTheme.errorRed,
+              content: Text('Veuillez activer la localisation GPS sur votre appareil.'),
+            ),
+          );
+        }
+        setSheetState(() => _isFetchingGps = false);
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: AppTheme.errorRed,
+                content: Text('Autorisation de géolocalisation refusée.'),
+              ),
+            );
+          }
+          setSheetState(() => _isFetchingGps = false);
+          return;
+        }
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+
+      setState(() {
+        _deliveryGeoPoint = GeoPoint(pos.latitude, pos.longitude);
+      });
+      setSheetState(() {
+        _isFetchingGps = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: AppTheme.accentGreen,
+            content: Text('Position GPS actuelle enregistrée avec succès ! 📍'),
+          ),
+        );
+      }
+    } catch (e) {
+      setSheetState(() => _isFetchingGps = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppTheme.errorRed,
+            content: Text('Erreur lors de la capture GPS : $e'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickPointOnMap(BuildContext ctx, StateSetter setSheetState) async {
+    LatLng selected = _deliveryGeoPoint != null
+        ? LatLng(_deliveryGeoPoint!.latitude, _deliveryGeoPoint!.longitude)
+        : const LatLng(36.7538, 3.0588);
+
+    final result = await showDialog<LatLng>(
+      context: ctx,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (innerCtx, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Pointer l\'adresse de livraison 📍', style: TextStyle(fontSize: 16)),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 350,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: selected,
+                    initialZoom: 14.0,
+                    onTap: (tapPosition, point) {
+                      setDialogState(() {
+                        selected = point;
+                      });
+                    },
+                  ),
+                  children: [
+                    MapTrackingService.buildOsmTileLayer(),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: selected,
+                          width: 44,
+                          height: 44,
+                          child: const Icon(
+                            Icons.location_pin,
+                            color: AppTheme.errorRed,
+                            size: 40,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentGreen),
+                onPressed: () => Navigator.pop(dialogCtx, selected),
+                child: const Text('Confirmer ce point 📍'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _deliveryGeoPoint = GeoPoint(result.latitude, result.longitude);
+      });
+      setSheetState(() {});
+    }
   }
 
   void _openCartModal() {
@@ -356,6 +894,7 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                               IconButton(
                                 icon: const Icon(Icons.remove_circle_outline),
                                 color: AppTheme.textMuted,
+                                tooltip: 'Diminuer la quantité',
                                 onPressed: () {
                                   _removeFromCart(product);
                                   setSheetState(() {});
@@ -371,8 +910,18 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                               IconButton(
                                 icon: const Icon(Icons.add_circle_outline),
                                 color: AppTheme.primaryOrange,
+                                tooltip: 'Augmenter la quantité',
                                 onPressed: () {
                                   _addToCart(product);
+                                  setSheetState(() {});
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                color: AppTheme.errorRed,
+                                tooltip: 'Retirer du panier',
+                                onPressed: () {
+                                  _removeEntirelyFromCart(product);
                                   setSheetState(() {});
                                 },
                               ),
@@ -382,7 +931,7 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       );
                     }),
 
-                    // Articles sur mesure
+                    // Articles sur mesure & photos
                     ..._customItems.map((custom) {
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -391,23 +940,108 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         ),
                         color: AppTheme.violetSurface,
                         child: ListTile(
-                          title: Text(
-                            custom.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          leading: custom.photoUrl != null &&
+                                  custom.photoUrl!.isNotEmpty
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: custom.photoUrl!.startsWith('http')
+                                      ? Image.network(
+                                          custom.photoUrl!,
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) =>
+                                              const Icon(Icons.broken_image, size: 28),
+                                        )
+                                      : Image.file(
+                                          File(custom.photoUrl!),
+                                          width: 44,
+                                          height: 44,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) =>
+                                              const Icon(Icons.broken_image, size: 28),
+                                        ),
+                                )
+                              : Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit_note,
+                                    color: AppTheme.violetAccent,
+                                  ),
+                                ),
+                          title: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  custom.name,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'Sur mesure',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryOrange,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           subtitle: Text(
-                            'Article sur mesure • ${custom.quantity.toStringAsFixed(0)} ${custom.unit}',
+                            '${custom.quantity.toStringAsFixed(custom.quantity % 1 == 0 ? 0 : 1)} ${custom.unit}${custom.notes.isNotEmpty ? ' • ${custom.notes}' : ''}${custom.estimatedPrice != null ? ' • ~${custom.estimatedPrice!.toStringAsFixed(0)} DA' : ''}',
                             style: const TextStyle(fontSize: 12),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline),
-                            color: AppTheme.errorRed,
-                            onPressed: () {
-                              setState(() {
-                                _customItems.remove(custom);
-                              });
-                              setSheetState(() {});
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline),
+                                color: AppTheme.textMuted,
+                                onPressed: () {
+                                  _updateCustomItemQty(custom, custom.quantity - 1);
+                                  setSheetState(() {});
+                                },
+                              ),
+                              Text(
+                                custom.quantity.toStringAsFixed(custom.quantity % 1 == 0 ? 0 : 1),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle_outline),
+                                color: AppTheme.primaryOrange,
+                                onPressed: () {
+                                  _updateCustomItemQty(custom, custom.quantity + 1);
+                                  setSheetState(() {});
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                color: AppTheme.errorRed,
+                                tooltip: 'Supprimer',
+                                onPressed: () {
+                                  _removeCustomItem(custom);
+                                  setSheetState(() {});
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -419,7 +1053,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     TextField(
                       controller: _storeCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Commerce / Magasin ciblé *',
+                        labelText: 'Commerce / Magasin ciblé (Optionnel)',
+                        hintText: 'Ex: Supérette El Baraka ou vide pour commerce de proximité',
                         prefixIcon: Icon(Icons.storefront_outlined),
                       ),
                     ),
@@ -427,11 +1062,114 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     TextField(
                       controller: _addressCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Adresse de livraison exacte *',
+                        labelText: 'Adresse de livraison écrite *',
                         prefixIcon: Icon(Icons.location_on_outlined),
                       ),
                     ),
                     const SizedBox(height: 10),
+
+                    // Carte Coordonnées GPS Obligatoires
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _deliveryGeoPoint != null
+                            ? AppTheme.accentGreen.withValues(alpha: 0.08)
+                            : AppTheme.warningOrange.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: _deliveryGeoPoint != null
+                              ? AppTheme.accentGreen.withValues(alpha: 0.4)
+                              : AppTheme.warningOrange.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _deliveryGeoPoint != null
+                                    ? Icons.check_circle
+                                    : Icons.warning_amber_rounded,
+                                color: _deliveryGeoPoint != null
+                                    ? AppTheme.accentGreen
+                                    : AppTheme.warningOrange,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _deliveryGeoPoint != null
+                                      ? 'Position GPS validée 📍'
+                                      : 'Position GPS obligatoire pour le Radar *',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: _deliveryGeoPoint != null
+                                        ? AppTheme.accentGreen
+                                        : AppTheme.warningOrange,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_deliveryGeoPoint != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              'Lat: ${_deliveryGeoPoint!.latitude.toStringAsFixed(5)}, Lon: ${_deliveryGeoPoint!.longitude.toStringAsFixed(5)}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textDark,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                  ),
+                                  onPressed: _isFetchingGps
+                                      ? null
+                                      : () => _fetchCurrentGps(setSheetState),
+                                  icon: _isFetchingGps
+                                      ? const SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.my_location, size: 16),
+                                  label: const Text(
+                                    'Ma position GPS',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                  ),
+                                  onPressed: () =>
+                                      _pickPointOnMap(sheetCtx, setSheetState),
+                                  icon: const Icon(Icons.map, size: 16),
+                                  label: const Text(
+                                    'Pointer sur carte',
+                                    style: TextStyle(fontSize: 11),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
                     TextField(
                       controller: budgetCtrl,
                       keyboardType: TextInputType.number,
@@ -474,13 +1212,29 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       onPressed: () async {
-                        final storeName = _storeCtrl.text.trim();
+                        final rawStore = _storeCtrl.text.trim();
+                        final storeName = rawStore.isNotEmpty
+                            ? rawStore
+                            : 'Commerce de proximité / Supérette locale';
                         final address = _addressCtrl.text.trim();
-                        if (storeName.isEmpty || address.isEmpty) {
+
+                        if (address.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               backgroundColor: AppTheme.errorRed,
-                              content: Text('Veuillez renseigner le magasin et l\'adresse.'),
+                              content: Text('Veuillez renseigner votre adresse de livraison.'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (_deliveryGeoPoint == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: AppTheme.errorRed,
+                              content: Text(
+                                'Règle stricte : Les coordonnées GPS de livraison sont obligatoires pour diffuser votre course sur le Radar.',
+                              ),
                             ),
                           );
                           return;
@@ -511,6 +1265,7 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                           clientId: widget.clientId,
                           storeName: storeName,
                           deliveryAddress: address,
+                          deliveryGeoPoint: _deliveryGeoPoint,
                           estimatedBudget: budget,
                           securePin: _generatedPin,
                           storeDistanceKm: 1.8,
@@ -560,6 +1315,11 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       appBar: AppBar(
         title: const Text('Commander mes courses 🛒'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.photo_camera_outlined),
+            tooltip: 'Photographier un produit',
+            onPressed: _openPhotoChoiceSheet,
+          ),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
             tooltip: 'Ajouter un article hors catalogue',
@@ -742,6 +1502,52 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
 
         // 2. Sélecteur horizontal des Rayons / Catégories
         _buildCategoriesBar(),
+
+        // Boutons d'action rapides : Photographier & Produit personnalisé
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    foregroundColor: AppTheme.primaryOrange,
+                    side: const BorderSide(color: AppTheme.primaryOrange),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: _openPhotoChoiceSheet,
+                  icon: const Icon(Icons.photo_camera, size: 16),
+                  label: const Text(
+                    '📷 Photographier',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    foregroundColor: AppTheme.violetAccent,
+                    side: const BorderSide(color: AppTheme.violetAccent),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: _openAddCustomItemDialog,
+                  icon: const Icon(Icons.edit_note, size: 16),
+                  label: const Text(
+                    '+ Produit personnalisé',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
 
         // 3. Indicateur de rayon sélectionné & total trouvé
         Padding(
@@ -953,10 +1759,18 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    color: AppTheme.errorRed,
+                    tooltip: 'Désélectionner',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    onPressed: () => _removeEntirelyFromCart(product),
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.remove, size: 18),
                     color: AppTheme.textMuted,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                     onPressed: () => _removeFromCart(product),
                   ),
                   Container(
@@ -981,7 +1795,7 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     icon: const Icon(Icons.add, size: 18),
                     color: AppTheme.primaryOrange,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                     onPressed: () => _addToCart(product),
                   ),
                 ],

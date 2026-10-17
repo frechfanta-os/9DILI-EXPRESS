@@ -181,8 +181,8 @@ void main() {
       ProductCatalogService.onDiagnosticEvent = null;
     });
 
-    test('Chargement réel du fichier catalogue complet assets/data/algeria_full_catalog.json', () async {
-      final file = File('assets/data/algeria_full_catalog.json');
+    test('Chargement réel du fichier catalogue officiel assets/data/algeria_lsl_flat.json', () async {
+      final file = File('assets/data/algeria_lsl_flat.json');
       expect(file.existsSync(), isTrue);
 
       final content = await file.readAsString();
@@ -190,13 +190,12 @@ void main() {
 
       expect(service.isLoaded, isTrue);
       expect(service.productCount, greaterThan(2200));
-      expect(service.categories, isNotEmpty);
-      expect(service.categoryCount, greaterThanOrEqualTo(25));
+      expect(service.categoryCount, greaterThanOrEqualTo(9));
 
       // Test de non-régression : les rayons et les produits ne sont jamais vides
-      expect(service.categories, contains('Fruits & Légumes'));
-      expect(service.categories, contains('Boissons'));
-      final freshItems = service.getByCategory('Fruits & Légumes');
+      expect(service.categories, contains('Marché Frais & Souk'));
+      expect(service.categories, contains('Boissons & Cave à Eaux'));
+      final freshItems = service.getByCategory('Marché Frais & Souk');
       expect(freshItems, isNotEmpty);
 
       // Vérification d'une recherche réelle dans le catalogue national

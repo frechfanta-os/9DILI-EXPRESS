@@ -23,6 +23,14 @@
           }
         },
         {
+          "client_id": "273784230349-release.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ghdinteractivestudio.dili_express",
+            "certificate_hash": "611edbc9d99ab998d31030c587af4f07912c66f2"
+          }
+        },
+        {
           "client_id": "273784230349-0lr2crsalpk51apeetf96fhthl4ap6k1.apps.googleusercontent.com",
           "client_type": 3
         }

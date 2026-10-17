@@ -25,7 +25,7 @@ class CatalogLoadException implements Exception {
 /// - Zéro dépendance payante, zéro base de données distante.
 class ProductCatalogService {
   static const String defaultAssetPath =
-      'assets/data/algeria_full_catalog.json';
+      'assets/data/algeria_lsl_flat.json';
 
   /// Instance partagée (Singleton) pour réutilisation à travers l'application
   static final ProductCatalogService instance = ProductCatalogService();
@@ -95,7 +95,7 @@ class ProductCatalogService {
     onDiagnosticEvent?.call('catalogLoadStarted', {'assetPath': assetPath});
 
     try {
-      final String jsonContent;
+      String jsonContent;
       if (rawJsonString != null) {
         jsonContent = rawJsonString;
       } else {
@@ -103,9 +103,29 @@ class ProductCatalogService {
       }
 
       final dynamic decoded = jsonDecode(jsonContent);
-      if (decoded is! List) {
+      final List rawList = [];
+      if (decoded is List) {
+        rawList.addAll(decoded);
+      } else if (decoded is Map) {
+        void extractLeafProducts(dynamic node) {
+          if (node is List) {
+            rawList.addAll(node);
+          } else if (node is Map) {
+            for (final val in node.values) {
+              extractLeafProducts(val);
+            }
+          }
+        }
+        extractLeafProducts(decoded);
+      } else {
         throw CatalogLoadException(
-          'Format JSON invalide : une liste d\'objets est attendue.',
+          'Format JSON invalide : une liste ou un dictionnaire hiérarchique est attendu.',
+        );
+      }
+
+      if (rawList.isEmpty) {
+        throw CatalogLoadException(
+          'Format JSON invalide ou aucun produit valide trouvé.',
         );
       }
 
@@ -113,9 +133,12 @@ class ProductCatalogService {
       final Set<String> seenUniqueKeys = {};
       final Set<String> categorySet = {};
 
-      for (final item in decoded) {
-        if (item is Map<String, dynamic>) {
-          final product = ProductModel.fromJson(item);
+      for (final item in rawList) {
+        if (item is Map) {
+          final productMap = item is Map<String, dynamic>
+              ? item
+              : Map<String, dynamic>.from(item);
+          final product = ProductModel.fromJson(productMap);
 
           // Déduplication prudente : n'élimine que les clones parfaits (même nom et même code-barres)
           final uniqueKey =

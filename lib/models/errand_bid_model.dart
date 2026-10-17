@@ -14,6 +14,7 @@ class ErrandBidModel {
   final String bidId;
   final String shopperId;
   final String shopperName;
+  final String? shopperPhone;
   final double shopperRating;
   final double proposedCommission;
   final String status; // 'pending', 'accepted', 'rejected'
@@ -24,6 +25,7 @@ class ErrandBidModel {
     required this.bidId,
     required this.shopperId,
     required this.shopperName,
+    this.shopperPhone,
     this.shopperRating = 5.0,
     required this.proposedCommission,
     this.status = BidStatus.pending,
@@ -43,6 +45,7 @@ class ErrandBidModel {
       bidId: documentId ?? data['bidId'] ?? '',
       shopperId: data['shopperId'] ?? '',
       shopperName: data['shopperName'] ?? '',
+      shopperPhone: data['shopperPhone'],
       shopperRating: (data['shopperRating'] as num?)?.toDouble() ?? 5.0,
       proposedCommission:
           (data['proposedCommission'] as num?)?.toDouble() ?? 0.0,
@@ -68,6 +71,7 @@ class ErrandBidModel {
       'bidId': bidId,
       'shopperId': shopperId,
       'shopperName': shopperName,
+      if (shopperPhone != null) 'shopperPhone': shopperPhone,
       'shopperRating': shopperRating,
       'proposedCommission': proposedCommission,
       'status': status,
@@ -82,6 +86,7 @@ class ErrandBidModel {
     String? bidId,
     String? shopperId,
     String? shopperName,
+    String? shopperPhone,
     double? shopperRating,
     double? proposedCommission,
     String? status,
@@ -92,6 +97,7 @@ class ErrandBidModel {
       bidId: bidId ?? this.bidId,
       shopperId: shopperId ?? this.shopperId,
       shopperName: shopperName ?? this.shopperName,
+      shopperPhone: shopperPhone ?? this.shopperPhone,
       shopperRating: shopperRating ?? this.shopperRating,
       proposedCommission: proposedCommission ?? this.proposedCommission,
       status: status ?? this.status,

@@ -1,18 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/errand_model.dart';
 import '../../models/errand_bid_model.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/errand_service.dart';
+import '../../services/map_tracking_service.dart';
 import '../../services/user_service.dart';
 import '../../services/product_catalog_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/map_markers.dart';
+import '../widgets/client_shopper_toggle.dart';
+import '../../services/user_mode_service.dart';
 import 'profile_screen.dart';
 import 'shopping_mode_screen.dart';
 import 'receipt_screen.dart';
 import 'delivery_tracking_screen.dart';
 import 'create_errand_screen.dart';
+import 'client_radar_screen.dart';
 
 /// Écran principal 9DILI EXPRESS (Stitch UI/UX V2).
 /// Adapte l'expérience selon le rôle (Client vs Shopper).
@@ -36,16 +44,280 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
+  bool _shopperMapView = false;
+  late AppMode _currentMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMode = UserModeService.instance.currentMode;
+  }
+
+  void _handleModeChange(AppMode newMode, UserModel user) async {
+    if (newMode == _currentMode) return;
+
+    if (newMode == AppMode.shopper) {
+      final prereq = UserModeService.instance.checkShopperPrerequisites(user);
+      if (!prereq.isEligible) {
+        _showShopperPrerequisitesModal(user, prereq);
+        return;
+      }
+    }
+
+    setState(() {
+      _currentMode = newMode;
+    });
+    await UserModeService.instance.setMode(newMode);
+  }
+
+  void _showShopperPrerequisitesModal(
+    UserModel user,
+    ShopperPrerequisitesResult prereq,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.shopperOrange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.delivery_dining,
+                    color: AppTheme.shopperOrange,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Activer le Mode Shoppeur',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Conditions requises pour livrer des courses',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Pour garantir la fiabilité des livraisons et la communication avec les clients, veuillez compléter votre profil :',
+              style: TextStyle(fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+
+            // Liste des prérequis
+            _buildPrerequisiteItem(
+              title: 'Nom complet',
+              subtitle: user.fullName.isNotEmpty ? user.fullName : 'À renseigner',
+              isValid: prereq.hasFullName,
+            ),
+            _buildPrerequisiteItem(
+              title: 'Numéro de téléphone vérifié',
+              subtitle: user.hasValidPhone
+                  ? (user.phone ?? '')
+                  : 'Obligatoire pour appeler le client avant livraison',
+              isValid: prereq.hasValidPhone,
+            ),
+            _buildPrerequisiteItem(
+              title: 'Moyen de déplacement',
+              subtitle: 'Véhicule déclaré : ${user.transport.labelFr}',
+              isValid: prereq.hasTransport,
+            ),
+            _buildPrerequisiteItem(
+              title: 'Trésorerie en poche',
+              subtitle:
+                  'Solde actuel : ${user.availableCash.toStringAsFixed(0)} DA (pour avancer les achats)',
+              isValid: true,
+            ),
+
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Plus tard'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.shopperOrange,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ProfileScreen(
+                            authService: widget.authService,
+                            userService: widget.userService,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Compléter mon profil ✍️'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPrerequisiteItem({
+    required String title,
+    required String subtitle,
+    required bool isValid,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            isValid ? Icons.check_circle : Icons.error_outline,
+            color: isValid ? AppTheme.clientGreen : AppTheme.shopperOrange,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: isValid ? AppTheme.textDark : AppTheme.shopperOrange,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMissingPhoneDialog({
+    required String title,
+    required String message,
+  }) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            const Icon(Icons.phone_android, color: AppTheme.warningOrange),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(title, style: const TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Plus tard'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryOrange,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProfileScreen(
+                    authService: widget.authService,
+                    userService: widget.userService,
+                  ),
+                ),
+              );
+            },
+            child: const Text('Compléter mon profil'),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ==========================================
   // PARCOURS CLIENT : CRÉATION DE LISTE & CATALOGUE
   // ==========================================
 
-  void _openCreateListDialog(String clientId) {
+  void _openCreateListDialog(UserModel user) {
+    if (!user.hasValidPhone) {
+      _showMissingPhoneDialog(
+        title: 'Numéro de téléphone requis',
+        message:
+            'Pour créer une course et être joignable par les shoppeurs, veuillez renseigner votre numéro de téléphone dans votre profil.',
+      );
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => CreateErrandScreen(
-          clientId: clientId,
+          clientId: user.uid,
           errandService: widget.errandService,
           catalogService:
               widget.catalogService ?? ProductCatalogService.instance,
@@ -55,11 +327,132 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _confirmCancelErrand(ErrandModel errand, String clientId) {
+    final isPending = errand.status == ErrandStatus.pending;
+    final isAccepted = errand.status == ErrandStatus.accepted;
+
+    if (!isPending && !isAccepted) {
+      String explanation;
+      if (errand.status == ErrandStatus.shopping) {
+        explanation =
+            'Le shoppeur est actuellement en magasin pour effectuer vos achats. Pour toute annulation ou ajustement, veuillez le contacter directement par téléphone.';
+      } else if (errand.status == ErrandStatus.delivering) {
+        explanation =
+            'Le shoppeur est actuellement en route pour vous livrer. L\'annulation unilatérale n\'est plus possible à ce stade.';
+      } else if (errand.status == ErrandStatus.completed) {
+        explanation = 'Cette course est déjà clôturée et archivée.';
+      } else {
+        explanation = 'Cette course est déjà annulée.';
+      }
+
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          title: const Row(
+            children: [
+              Icon(Icons.info_outline, color: AppTheme.violetAccent),
+              SizedBox(width: 8),
+              Text('Information commande', style: TextStyle(fontSize: 16)),
+            ],
+          ),
+          content: Text(explanation, style: const TextStyle(fontSize: 13)),
+          actions: [
+            if (errand.shopperPhone != null && errand.shopperPhone!.isNotEmpty)
+              TextButton.icon(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _makeMandatoryCall(errand, 'Shoppeur', errand.shopperPhone);
+                },
+                icon: const Icon(Icons.phone, size: 16),
+                label: const Text('Appeler le shoppeur'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Compris'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final title = isPending ? 'Retirer la commande ?' : 'Annuler la commande ?';
+    final message = isPending
+        ? 'Voulez-vous vraiment retirer cette commande ? Elle sera immédiatement supprimée du radar des shoppeurs.'
+        : 'Un shoppeur a déjà été assigné à cette commande (${errand.shopperPhone ?? 'Shoppeur'}). L\'annulation à ce stade préviendra le shoppeur et libérera la course. Confirmer l\'annulation ?';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppTheme.errorRed),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(title, style: const TextStyle(fontSize: 16)),
+            ),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 13)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Garder ma commande'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorRed,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              try {
+                await widget.errandService.cancelErrand(
+                  errandId: errand.errandId,
+                  clientId: clientId,
+                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      backgroundColor: AppTheme.accentGreen,
+                      content: Text('Commande retirée et annulée avec succès.'),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: AppTheme.errorRed,
+                      content: Text('Échec de l\'annulation : $e'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Confirmer l\'annulation'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ==========================================
   // PARCOURS SHOPPER : OFFRES & CONFIRMATION
   // ==========================================
 
   void _openPlaceBidDialog(ErrandModel errand, UserModel shopper) {
+    if (!shopper.hasValidPhone) {
+      _showMissingPhoneDialog(
+        title: 'Numéro de téléphone requis',
+        message:
+            'Pour faire une offre sur une course, votre numéro de téléphone doit être renseigné sur votre profil.',
+      );
+      return;
+    }
+
     final commissionCtrl = TextEditingController(text: '350');
 
     showDialog(
@@ -92,12 +485,16 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Annuler'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryOrange,
+            ),
             onPressed: () async {
               final comm = double.tryParse(commissionCtrl.text.trim()) ?? 350.0;
               final bid = ErrandBidModel(
                 bidId: '',
                 shopperId: shopper.uid,
                 shopperName: shopper.fullName,
+                shopperPhone: shopper.phone,
                 shopperRating: shopper.rating,
                 proposedCommission: comm,
                 status: BidStatus.pending,
@@ -119,6 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String? phone,
   ) async {
     final currentUid = widget.authService.currentUser?.uid ?? 'unknown_user';
+    final isValidPhone = phone != null && UserModel.isValidPhone(phone);
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -163,7 +561,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppTheme.violetSurface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.violetAccent.withValues(alpha: 0.3),
+                  color: isValidPhone
+                      ? AppTheme.violetAccent.withValues(alpha: 0.3)
+                      : AppTheme.errorRed.withValues(alpha: 0.4),
                 ),
               ),
               child: Column(
@@ -178,16 +578,46 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    phone != null && phone.isNotEmpty
+                    isValidPhone
                         ? 'Numéro : $phone'
-                        : 'Numéro de téléphone non renseigné sur le profil.',
+                        : (phone != null && phone.isNotEmpty
+                            ? 'Numéro invalide : $phone'
+                            : 'Numéro de téléphone non renseigné sur le profil.'),
                     style: TextStyle(
                       fontSize: 13,
-                      color: phone != null && phone.isNotEmpty
-                          ? AppTheme.textDark
-                          : AppTheme.errorRed,
+                      fontWeight: FontWeight.w600,
+                      color: isValidPhone ? AppTheme.textDark : AppTheme.errorRed,
                     ),
                   ),
+                  if (isValidPhone) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: () async {
+                        final uri = Uri.parse('tel:$phone');
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                        }
+                      },
+                      icon: const Icon(Icons.call, size: 16),
+                      label: Text(
+                        'Composer : $phone',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 4),
+                    const Text(
+                      '⚠️ Impossible d\'attester un appel sans numéro valide.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.errorRed,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -205,10 +635,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentGreen,
+              backgroundColor: isValidPhone ? AppTheme.accentGreen : Colors.grey.shade400,
               foregroundColor: Colors.white,
             ),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            onPressed: isValidPhone ? () => Navigator.of(dialogCtx).pop(true) : null,
             icon: const Icon(Icons.check_circle_outline, size: 18),
             label: const Text('J\'atteste l\'appel'),
           ),
@@ -334,7 +764,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onPressed: () => _makeMandatoryCall(
                                       errand,
                                       bid.shopperName,
-                                      errand.shopperPhone,
+                                      bid.shopperPhone,
                                     ),
                                     icon: const Icon(Icons.phone, size: 16),
                                     label: const Text(
@@ -372,6 +802,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         errandId: errand.errandId,
                                         bidId: bid.bidId,
                                         shopperId: bid.shopperId,
+                                        shopperPhone: bid.shopperPhone,
                                         agreedCommission:
                                             bid.proposedCommission,
                                       );
@@ -419,21 +850,33 @@ class _HomeScreenState extends State<HomeScreen> {
               email: authUser.email,
             );
 
+        final isShopperMode = _currentMode == AppMode.shopper;
+        final primaryColor = AppTheme.primaryFor(_currentMode);
+
         return Scaffold(
           appBar: AppBar(
             title: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryOrange.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.flash_on,
-                    color: AppTheme.primaryOrange,
-                    size: 20,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/branding/9dili/9dili_icon_master.png',
+                    width: 26,
+                    height: 26,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.flash_on,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -459,8 +902,20 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(58),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Center(
+                  child: ClientShopperToggle(
+                    currentMode: _currentMode,
+                    onModeChanged: (mode) => _handleModeChange(mode, userModel),
+                  ),
+                ),
+              ),
+            ),
           ),
-          body: userModel.isShopper
+          body: isShopperMode
               ? _buildShopperRadarView(userModel)
               : _buildClientHomeView(userModel),
           bottomNavigationBar: NavigationBar(
@@ -483,7 +938,7 @@ class _HomeScreenState extends State<HomeScreen> {
               NavigationDestination(
                 icon: const Icon(Icons.explore_outlined),
                 selectedIcon: const Icon(Icons.explore),
-                label: userModel.isShopper ? 'Radar Shopper' : 'Accueil Client',
+                label: isShopperMode ? 'Radar Shopper' : 'Accueil Client',
               ),
               const NavigationDestination(
                 icon: Icon(Icons.person_outline),
@@ -492,11 +947,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          floatingActionButton: !userModel.isShopper
+          floatingActionButton: !isShopperMode
               ? FloatingActionButton.extended(
-                  backgroundColor: AppTheme.primaryOrange,
+                  backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
-                  onPressed: () => _openCreateListDialog(userModel.uid),
+                  onPressed: () => _openCreateListDialog(userModel),
                   icon: const Icon(Icons.add),
                   label: const Text('Créer ma liste'),
                 )
@@ -560,15 +1015,96 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
+
+          // Accès direct au Radar Shoppers Client
+          Card(
+            elevation: 2,
+            color: AppTheme.secondaryNavy,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.radar,
+                      color: AppTheme.clientGreen,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Radar Shoppers en Direct 📡',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Visualisez les livreurs disponibles autour de vous en temps réel.',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.clientGreen,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ClientRadarScreen(
+                            currentUser: user,
+                            userService: widget.userService,
+                            errandService: widget.errandService,
+                            authService: widget.authService,
+                            catalogService: widget.catalogService,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Explorer',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
 
           // Bouton principal « Créer ma liste » conservé
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryOrange,
+              backgroundColor: AppTheme.clientGreen,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),
-            onPressed: () => _openCreateListDialog(user.uid),
+            onPressed: () => _openCreateListDialog(user),
             icon: const Icon(Icons.edit_note, size: 24),
             label: const Text(
               'Créer ma liste 📝',
@@ -726,6 +1262,51 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
+                                const SizedBox(width: 8),
+                                OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppTheme.errorRed,
+                                    side: const BorderSide(color: AppTheme.errorRed),
+                                  ),
+                                  onPressed: () =>
+                                      _confirmCancelErrand(errand, user.uid),
+                                  icon: const Icon(Icons.cancel_outlined, size: 16),
+                                  label: const Text(
+                                    'Retirer',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                              ] else if (errand.status == ErrandStatus.cancelled) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.errorRed.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        size: 16,
+                                        color: AppTheme.errorRed,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Commande retirée et annulée (hors radar).',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.errorRed,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ] else ...[
                                 IconButton.filledTonal(
                                   onPressed: () => _makeMandatoryCall(
@@ -752,7 +1333,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Expanded(
                                   child: ElevatedButton.icon(
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.primaryOrange,
+                                      backgroundColor: AppTheme.clientGreen,
                                     ),
                                     onPressed: () {
                                       Navigator.of(context).push(
@@ -777,6 +1358,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
+                                if (errand.status == ErrandStatus.accepted ||
+                                    errand.status == ErrandStatus.shopping) ...[
+                                  const SizedBox(width: 6),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.cancel_outlined,
+                                      color: AppTheme.errorRed,
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Annuler la commande',
+                                    onPressed: () =>
+                                        _confirmCancelErrand(errand, user.uid),
+                                  ),
+                                ],
                               ],
                             ],
                           ),
@@ -845,8 +1440,68 @@ class _HomeScreenState extends State<HomeScreen> {
                 value: shopper.isOnline,
                 activeThumbColor: AppTheme.accentGreen,
                 onChanged: (val) {
+                  if (val && !shopper.hasValidPhone) {
+                    _showMissingPhoneDialog(
+                      title: 'Numéro de téléphone requis',
+                      message:
+                          'Pour passer en ligne et recevoir des alertes de courses sur le Radar, veuillez renseigner un numéro de téléphone valide sur votre profil.',
+                    );
+                    return;
+                  }
                   widget.userService.setOnlineStatus(shopper.uid, val);
                 },
+              ),
+            ],
+          ),
+        ),
+
+        // Sélecteur Vue Carte / Vue Liste pour le Shopper
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: ChoiceChip(
+                  label: const Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.map_outlined, size: 16),
+                        SizedBox(width: 6),
+                        Text('Carte Radar 🗺️'),
+                      ],
+                    ),
+                  ),
+                  selected: _shopperMapView,
+                  selectedColor: AppTheme.violetAccent,
+                  labelStyle: TextStyle(
+                    color: _shopperMapView ? Colors.white : AppTheme.textDark,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  onSelected: (v) => setState(() => _shopperMapView = true),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ChoiceChip(
+                  label: const Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.list_alt, size: 16),
+                        SizedBox(width: 6),
+                        Text('Liste Courses 📋'),
+                      ],
+                    ),
+                  ),
+                  selected: !_shopperMapView,
+                  selectedColor: AppTheme.violetAccent,
+                  labelStyle: TextStyle(
+                    color: !_shopperMapView ? Colors.white : AppTheme.textDark,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  onSelected: (v) => setState(() => _shopperMapView = false),
+                ),
               ),
             ],
           ),
@@ -1034,6 +1689,131 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                );
+              }
+
+              // Affichage Cartographique interactif du Radar Shopper
+              if (_shopperMapView) {
+                final shopperPos = shopper.location != null
+                    ? LatLng(
+                        shopper.location!.latitude,
+                        shopper.location!.longitude,
+                      )
+                    : const LatLng(36.7538, 3.0588);
+
+                return Stack(
+                  children: [
+                    FlutterMap(
+                      options: MapOptions(
+                        initialCenter: shopperPos,
+                        initialZoom: 13.5,
+                      ),
+                      children: [
+                        MapTrackingService.buildOsmTileLayer(),
+                        CircleLayer(
+                          circles: [
+                            CircleMarker(
+                              point: shopperPos,
+                              radius:
+                                  (shopper.searchRadiusKm > 0
+                                      ? shopper.searchRadiusKm
+                                      : 5.0) *
+                                  1000,
+                              useRadiusInMeter: true,
+                              color: AppTheme.accentGreen.withValues(
+                                alpha: 0.08,
+                              ),
+                              borderColor: AppTheme.accentGreen.withValues(
+                                alpha: 0.4,
+                              ),
+                              borderStrokeWidth: 1.5,
+                            ),
+                          ],
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: shopperPos,
+                              width: 44,
+                              height: 44,
+                              child: const ShopperMarkerWidget(size: 40),
+                            ),
+                            ...errands.map((errand) {
+                              final ePos = errand.deliveryGeoPoint != null
+                                  ? LatLng(
+                                      errand.deliveryGeoPoint!.latitude,
+                                      errand.deliveryGeoPoint!.longitude,
+                                    )
+                                  : LatLng(
+                                      shopperPos.latitude + 0.005,
+                                      shopperPos.longitude + 0.005,
+                                    );
+
+                              return Marker(
+                                point: ePos,
+                                width: 44,
+                                height: 44,
+                                child: GestureDetector(
+                                  onTap: () =>
+                                      _openPlaceBidDialog(errand, shopper),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryOrange,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.shopping_bag,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${errands.length} course(s) disponible(s) sur la carte',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               }
 

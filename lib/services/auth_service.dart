@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../models/user_model.dart';
@@ -28,6 +29,10 @@ class AuthResult {
 /// - Le numéro de téléphone n'est JAMAIS obligatoire (inscription, connexion, profil).
 /// - Aucune vérification SMS obligatoire.
 class AuthService {
+  static const String googleWebClientId =
+      '273784230349-0lr2crsalpk51apeetf96fhthl4ap6k1.apps.googleusercontent.com';
+  static const String serverClientId = googleWebClientId;
+
   final FirebaseAuth _auth;
   final GoogleSignIn _googleSignIn;
   final UserService? userService;
@@ -37,7 +42,12 @@ class AuthService {
     GoogleSignIn? googleSignIn,
     this.userService,
   }) : _auth = auth ?? FirebaseAuth.instance,
-       _googleSignIn = googleSignIn ?? GoogleSignIn();
+       _googleSignIn =
+           googleSignIn ??
+           GoogleSignIn(
+             serverClientId: googleWebClientId,
+             scopes: ['email', 'profile'],
+           );
 
   /// Utilisateur actuellement connecté.
   User? get currentUser => _auth.currentUser;
@@ -209,6 +219,18 @@ class AuthService {
       }
 
       return AuthResult.success(user);
+    } on PlatformException catch (e) {
+      if (e.code == 'sign_in_failed' &&
+          (e.message?.contains('10') == true || e.toString().contains('10:'))) {
+        return const AuthResult.failure(
+          'Échec Google Sign-In (DEVELOPER_ERROR code 10) : L\'empreinte SHA-1 du certificat de signature de l\'APK doit être enregistrée dans la console Firebase (SHA-1: 61:1E:DB:C9:D9:9A:B9:98:D3:10:30:C5:87:AF:4F:07:91:2C:66:F2).',
+          errorCode: 'developer-error-10',
+        );
+      }
+      return AuthResult.failure(
+        'Erreur de la plateforme Google Sign-In : ${e.message ?? e.code}',
+        errorCode: e.code,
+      );
     } on FirebaseAuthException catch (e) {
       return AuthResult.failure(_mapFirebaseError(e), errorCode: e.code);
     } catch (e) {

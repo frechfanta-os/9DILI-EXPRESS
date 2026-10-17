@@ -9,6 +9,7 @@ import 'services/auth_service.dart';
 import 'services/user_service.dart';
 import 'services/errand_service.dart';
 import 'services/product_catalog_service.dart';
+import 'services/user_mode_service.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/screens/auth_screen.dart';
 import 'ui/screens/home_screen.dart';
@@ -71,40 +72,48 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
     _errandService = ErrandService();
     _catalogService = ProductCatalogService.instance;
     _catalogService.loadCatalog();
+    UserModeService.instance.init();
   }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: '9DILI EXPRESS',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      home: StreamBuilder<User?>(
-        stream: _authService.authStateChanges,
-        builder: (context, snapshot) {
-          // État de chargement initial
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(color: AppTheme.primaryOrange),
-              ),
-            );
-          }
+    return ValueListenableBuilder<AppMode>(
+      valueListenable: UserModeService.instance.modeNotifier,
+      builder: (context, activeMode, _) {
+        return MaterialApp(
+          title: '9DILI EXPRESS',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.themeFor(activeMode),
+          home: StreamBuilder<User?>(
+            stream: _authService.authStateChanges,
+            builder: (context, snapshot) {
+              // État de chargement initial
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Scaffold(
+                  body: Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryFor(activeMode),
+                    ),
+                  ),
+                );
+              }
 
-          // Utilisateur authentifié (Google ou Email)
-          if (snapshot.hasData && snapshot.data != null) {
-            return HomeScreen(
-              authService: _authService,
-              userService: _userService,
-              errandService: _errandService,
-              catalogService: _catalogService,
-            );
-          }
+              // Utilisateur authentifié (Google ou Email)
+              if (snapshot.hasData && snapshot.data != null) {
+                return HomeScreen(
+                  authService: _authService,
+                  userService: _userService,
+                  errandService: _errandService,
+                  catalogService: _catalogService,
+                );
+              }
 
-          // Non connecté : Écran d'authentification
-          return AuthScreen(authService: _authService);
-        },
-      ),
+              // Non connecté : Écran d'authentification
+              return AuthScreen(authService: _authService);
+            },
+          ),
+        );
+      },
     );
   }
 }

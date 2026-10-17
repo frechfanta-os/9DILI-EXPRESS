@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_service.dart';
+import '../../services/user_mode_service.dart';
 import '../theme/app_theme.dart';
 
 /// Écran de profil utilisateur 9DILI EXPRESS (Stitch UI/UX V2).
@@ -68,21 +69,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       phone: newPhone.isNotEmpty ? newPhone : null, // Optionnel
     );
 
-    // 2. Mise à jour trésorerie si shopper
-    if (currentUserModel.isShopper && cashParsed != null) {
-      await widget.userService.setAvailableCash(
-        currentUserModel.uid,
-        cashParsed,
-      );
+    String? cashError;
+    // 2. Mise à jour trésorerie (disponible pour tous les profils activant la livraison)
+    if (cashParsed != null) {
+      if (cashParsed < 0) {
+        setState(() {
+          _isSaving = false;
+          _isError = true;
+          _feedbackMessage = 'Le montant de trésorerie ne peut pas être négatif.';
+        });
+        return;
+      }
+      try {
+        await widget.userService.setAvailableCash(
+          currentUserModel.uid,
+          cashParsed,
+        );
+      } catch (e) {
+        cashError = 'Erreur lors de la sauvegarde de la trésorerie : $e';
+      }
     }
 
     if (mounted) {
+      final isSuccess = authResult.isSuccess && cashError == null;
       setState(() {
         _isSaving = false;
-        _isError = !authResult.isSuccess;
-        _feedbackMessage = authResult.isSuccess
-            ? 'Profil mis à jour avec succès !'
-            : (authResult.errorMessage ?? 'Erreur lors de la mise à jour.');
+        _isError = !isSuccess;
+        _feedbackMessage = isSuccess
+            ? 'Profil et trésorerie enregistrés avec succès !'
+            : (cashError ??
+                authResult.errorMessage ??
+                'Erreur lors de la mise à jour.');
       });
     }
   }
@@ -211,21 +228,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: userModel.isShopper
-                                  ? AppTheme.accentGreen.withValues(alpha: 0.15)
-                                  : AppTheme.primaryOrange.withValues(
-                                      alpha: 0.15,
-                                    ),
+                              color: AppTheme.primaryFor(
+                                UserModeService.instance.currentMode,
+                              ).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              userModel.isShopper ? '🚴 Shoppeur' : '🛒 Client',
+                              UserModeService.instance.isShopper
+                                  ? '🚴 Mode Shoppeur'
+                                  : '🛒 Mode Client',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: userModel.isShopper
-                                    ? AppTheme.accentGreen
-                                    : AppTheme.primaryOrange,
+                                color: AppTheme.primaryFor(
+                                  UserModeService.instance.currentMode,
+                                ),
                               ),
                             ),
                           ),
@@ -259,44 +276,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // Options Shoppeur (Statut En ligne / Trésorerie)
-                  if (userModel.isShopper) ...[
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Paramètres de livraison',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const Divider(height: 20),
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: const Text('Disponible pour livrer'),
-                              subtitle: Text(
-                                userModel.isOnline
-                                    ? 'En ligne (Radar actif)'
-                                    : 'Hors ligne',
+                  // Paramètres de livraison Shoppeur (Statut En ligne / Trésorerie / Véhicule)
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Paramètres de livraison (Shoppeur)',
                                 style: TextStyle(
-                                  color: userModel.isOnline
-                                      ? AppTheme.accentGreen
-                                      : AppTheme.textMuted,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              value: userModel.isOnline,
-                              activeThumbColor: AppTheme.accentGreen,
-                              onChanged: (val) {
-                                widget.userService.setOnlineStatus(
-                                  userModel.uid,
-                                  val,
-                                );
-                              },
+                              if (!userModel.hasValidPhone)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.shopperOrange.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text(
+                                    'Téléphone requis',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppTheme.shopperOrange,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const Divider(height: 20),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Disponible pour livrer'),
+                            subtitle: Text(
+                              userModel.isOnline
+                                  ? 'En ligne (Radar actif)'
+                                  : 'Hors ligne',
+                              style: TextStyle(
+                                color: userModel.isOnline
+                                    ? AppTheme.accentGreen
+                                    : AppTheme.textMuted,
+                              ),
                             ),
+                            value: userModel.isOnline,
+                            activeThumbColor: AppTheme.accentGreen,
+                            onChanged: (val) {
+                              if (val && !userModel.hasValidPhone) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Veuillez renseigner un numéro de téléphone valide avant de passer en ligne.',
+                                    ),
+                                    backgroundColor: AppTheme.shopperOrange,
+                                  ),
+                                );
+                                return;
+                              }
+                              widget.userService.setOnlineStatus(
+                                userModel.uid,
+                                val,
+                              );
+                            },
+                          ),
                             const SizedBox(height: 10),
                             TextFormField(
                               controller: _cashController,
@@ -315,35 +368,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 14),
                             DropdownButtonFormField<String>(
                               initialValue: userModel.transportType,
+                              isExpanded: true,
                               decoration: const InputDecoration(
                                 labelText: 'Moyen de déplacement',
                                 prefixIcon: Icon(Icons.directions_bike),
                               ),
+                              selectedItemBuilder: (BuildContext context) {
+                                return const [
+                                  Text('🚶 À pied', overflow: TextOverflow.ellipsis),
+                                  Text('🚲 Vélo', overflow: TextOverflow.ellipsis),
+                                  Text('🛴 Trottinette', overflow: TextOverflow.ellipsis),
+                                  Text('🛵 Moto / Scooter', overflow: TextOverflow.ellipsis),
+                                  Text('🚗 Voiture', overflow: TextOverflow.ellipsis),
+                                ];
+                              },
                               items: const [
                                 DropdownMenuItem(
                                   value: 'walking',
-                                  child: Text('🚶 À pied (Max 1.5 km - 5 kg)'),
+                                  child: Text(
+                                    '🚶 À pied (Max 1.5 km - 5 kg)',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'bicycle',
-                                  child: Text('🚲 Vélo (Max 3.5 km - 10 kg)'),
+                                  child: Text(
+                                    '🚲 Vélo (Max 3.5 km - 10 kg)',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'scooter',
                                   child: Text(
                                     '🛴 Trottinette (Max 3 km - 8 kg)',
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'motorcycle',
                                   child: Text(
                                     '🛵 Moto / Scooter (Max 10 km - 20 kg)',
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 DropdownMenuItem(
                                   value: 'car',
                                   child: Text(
                                     '🚗 Voiture (Max 25 km - 80+ kg)',
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -362,7 +434,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                  ],
 
                   // Édition des informations
                   Card(
@@ -391,16 +462,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Téléphone facultatif
+                          // Téléphone obligatoire pour commander et livrer
                           TextFormField(
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
                             decoration: const InputDecoration(
-                              labelText: 'Téléphone (Optionnel)',
-                              hintText: 'Facultatif : vous pouvez laisser vide',
-                              helperText: 'Non obligatoire pour enregistrer',
+                              labelText: 'Numéro de téléphone *',
+                              hintText: 'Ex: 0555123456 ou +213555123456',
+                              helperText: 'Obligatoire pour passer ou livrer des commandes',
                               prefixIcon: Icon(Icons.phone_outlined),
                             ),
+                            validator: (v) {
+                              if (v == null || v.trim().isEmpty) {
+                                return 'Le numéro de téléphone est obligatoire.';
+                              }
+                              if (!UserModel.isValidPhone(v.trim())) {
+                                return 'Veuillez saisir un numéro valide (au moins 9 chiffres).';
+                              }
+                              return null;
+                            },
                           ),
                         ],
                       ),

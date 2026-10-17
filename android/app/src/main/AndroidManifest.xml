@@ -7,13 +7,17 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
-    <!-- Permission de notifications push pour Android 13+ (API 33+) -->
+    <!-- Permission de notifications push pour Android 13+ (API 33+) et Android 16 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- Permission caméra pour la capture du ticket de caisse en magasin -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:label="9DILI EXPRESS"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -40,6 +44,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Canal de notification par défaut pour les messages push FCM (API 26+) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="errand_updates_channel" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -48,6 +57,11 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Package visibility pour ouverture du composeur téléphonique (API 30+) sans permission sensible CALL_PHONE -->
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
         </intent>
         <!-- Package visibility pour l'installateur d'APK Android (API 30+) et mises à jour -->
         <intent>

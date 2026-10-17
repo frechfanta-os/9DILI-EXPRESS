@@ -212,19 +212,42 @@ class _AuthScreenState extends State<AuthScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo / Header
+                  // Logo / Header officiel 9DILI EXPRESS
                   Center(
                     child: Container(
-                      width: 80,
-                      height: 80,
+                      width: 88,
+                      height: 88,
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryOrange.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: const Icon(
-                        Icons.delivery_dining,
-                        size: 48,
-                        color: AppTheme.primaryOrange,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: Image.asset(
+                          'assets/branding/9dili/9dili_icon_master.png',
+                          width: 88,
+                          height: 88,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryOrange
+                                  .withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.delivery_dining,
+                              size: 48,
+                              color: AppTheme.primaryOrange,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),

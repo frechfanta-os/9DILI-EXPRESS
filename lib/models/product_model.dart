@@ -12,6 +12,9 @@ class ProductModel {
   final String? unitType;
   final num? unitValue;
   final double? estimatedPriceDzd;
+  final String? aisleCode;
+  final String? aisleNameFr;
+  final String? aisleNameAr;
   final String? imageUrl;
 
   const ProductModel({
@@ -23,6 +26,9 @@ class ProductModel {
     this.brand,
     this.category,
     this.subCategory,
+    this.aisleCode,
+    this.aisleNameFr,
+    this.aisleNameAr,
     this.isWeighable = false,
     this.unitType,
     this.unitValue,
@@ -58,6 +64,30 @@ class ProductModel {
       rawBarcode = null;
     }
 
+    // Extraction robuste des métadonnées LSL & Packaging
+    final merch = json['lsl_merchandising'] is Map
+        ? (json['lsl_merchandising'] as Map)
+        : null;
+    final packaging = json['packaging'] is Map
+        ? (json['packaging'] as Map)
+        : null;
+
+    final aisleNameFr = merch?['aisle_name_fr']?.toString();
+    final aisleNameAr = merch?['aisle_name_ar']?.toString();
+    final aisleCode = merch?['aisle_code']?.toString();
+
+    final category = json['category']?.toString() ??
+        aisleNameFr ??
+        merch?['category']?.toString();
+    final subCategory = json['sub_category']?.toString() ??
+        merch?['sub_category']?.toString();
+    final isWeighable = json['is_weighable'] == true ||
+        packaging?['is_weighable'] == true;
+    final unitType = json['unit_type']?.toString() ??
+        packaging?['unit_type']?.toString();
+    final rawUnitVal = json['unit_value'] ?? packaging?['unit_value'];
+    final unitValue = rawUnitVal is num ? rawUnitVal : null;
+
     return ProductModel(
       skuId: json['sku_id']?.toString() ?? '',
       barcode: rawBarcode,
@@ -65,11 +95,14 @@ class ProductModel {
       nameAr: json['name_ar']?.toString(),
       searchKeywordsDarja: keywords,
       brand: json['brand']?.toString(),
-      category: json['category']?.toString(),
-      subCategory: json['sub_category']?.toString(),
-      isWeighable: json['is_weighable'] == true,
-      unitType: json['unit_type']?.toString(),
-      unitValue: json['unit_value'] is num ? json['unit_value'] as num : null,
+      category: category,
+      subCategory: subCategory,
+      aisleCode: aisleCode,
+      aisleNameFr: aisleNameFr,
+      aisleNameAr: aisleNameAr,
+      isWeighable: isWeighable,
+      unitType: unitType,
+      unitValue: unitValue,
       estimatedPriceDzd: price,
       imageUrl: json['image_url']?.toString(),
     );

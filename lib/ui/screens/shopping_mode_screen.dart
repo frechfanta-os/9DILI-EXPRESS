@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../models/errand_model.dart';
@@ -27,6 +29,54 @@ class ShoppingModeScreen extends StatefulWidget {
 }
 
 class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
+  void _showImageDialog(BuildContext context, String photoUrl, String title) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppBar(
+              title: Text(title, style: const TextStyle(fontSize: 14)),
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: photoUrl.startsWith('http')
+                  ? Image.network(
+                      photoUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(child: Text('Image distante indisponible')),
+                      ),
+                    )
+                  : Image.file(
+                      File(photoUrl),
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Center(child: Text('Image locale indisponible')),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   void _openReplacementDialog(ErrandItemModel item) {
     final noteCtrl = TextEditingController(text: item.replacementNote ?? '');
 
@@ -184,36 +234,158 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      if (item.photoUrl != null &&
+                                          item.photoUrl!.isNotEmpty) ...[
+                                        GestureDetector(
+                                          onTap: () => _showImageDialog(
+                                            context,
+                                            item.photoUrl!,
+                                            item.name,
+                                          ),
+                                          child: Stack(
+                                            children: [
+                                              ClipRRect(
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                                child: item.photoUrl!
+                                                        .startsWith('http')
+                                                    ? Image.network(
+                                                        item.photoUrl!,
+                                                        width: 54,
+                                                        height: 54,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder:
+                                                            (_, _, _) =>
+                                                                const Icon(
+                                                          Icons.broken_image,
+                                                          size: 40,
+                                                        ),
+                                                      )
+                                                    : Image.file(
+                                                        File(item.photoUrl!),
+                                                        width: 54,
+                                                        height: 54,
+                                                        fit: BoxFit.cover,
+                                                        errorBuilder:
+                                                            (_, _, _) =>
+                                                                const Icon(
+                                                          Icons.broken_image,
+                                                          size: 40,
+                                                        ),
+                                                      ),
+                                              ),
+                                              Positioned(
+                                                bottom: 2,
+                                                right: 2,
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.all(2),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black54,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      4,
+                                                    ),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.zoom_in,
+                                                    color: Colors.white,
+                                                    size: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                      ],
                                       Expanded(
-                                        child: Text(
-                                          item.name,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.violetSurface,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          '${item.quantity.toStringAsFixed(item.quantity % 1 == 0 ? 0 : 1)} ${item.unit}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.violetAccent,
-                                            fontSize: 12,
-                                          ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    item.name,
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        AppTheme.violetSurface,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      10,
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    '${item.quantity.toStringAsFixed(item.quantity % 1 == 0 ? 0 : 1)} ${item.unit}',
+                                                    style: const TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color:
+                                                          AppTheme.violetAccent,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (item.isCustom) ...[
+                                              const SizedBox(height: 4),
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 6,
+                                                  vertical: 2,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.primaryOrange
+                                                      .withValues(alpha: 0.15),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: const Text(
+                                                  'Produit personnalisé ✍️',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color:
+                                                        AppTheme.primaryOrange,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                            if (item.brand != null &&
+                                                item.brand!.isNotEmpty) ...[
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'Marque : ${item.brand}',
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: AppTheme.textMuted,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                       ),
                                     ],

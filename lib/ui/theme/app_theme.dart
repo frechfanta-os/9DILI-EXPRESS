@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
 
+/// Modes de navigation et d'interface de l'application 9DILI EXPRESS.
+enum AppMode {
+  client,
+  shopper,
+}
+
 /// Thème visuel officiel 9DILI EXPRESS — Stitch UI/UX V2.
-/// - Couleur Principale : Orange vif (#FF6D00)
+/// - Mode Client  : Vert Émeraude (#10B981) — Focus catalogue, panier, courses
+/// - Mode Shopper : Orange Vif (#FF6D00)    — Focus radar, commandes, livraisons
 /// - Validation / Succès : Vert (#10B981)
 /// - Surfaces Secondaires : Violet clair (#EDE9FE / #8B5CF6)
 /// - Fond : Blanc cassé moderne (#F8FAFC)
 /// - Cartes arrondies (r=18)
 class AppTheme {
-  static const Color primaryOrange = Color(0xFFFF6D00); // Orange Express 9DILI
-  static const Color accentGreen = Color(0xFF10B981); // Vert validation
-  static const Color violetSurface = Color(
-    0xFFEDE9FE,
-  ); // Violet clair surfaces secondaires
-  static const Color violetAccent = Color(0xFF8B5CF6); // Violet boutons/icônes
+  // Couleurs principales par mode
+  static const Color clientGreen = Color(0xFF10B981); // Vert officiel Mode Client
+  static const Color shopperOrange = Color(0xFFFF6D00); // Orange officiel Mode Shopper
+
+  // Rétrocompatibilité
+  static const Color primaryOrange = shopperOrange;
+  static const Color accentGreen = clientGreen;
+
+  static const Color violetSurface = Color(0xFFEDE9FE);
+  static const Color violetAccent = Color(0xFF8B5CF6);
   static const Color secondaryNavy = Color(0xFF1E293B);
   static const Color backgroundLight = Color(0xFFF8FAFC);
   static const Color surfaceWhite = Color(0xFFFFFFFF);
@@ -21,12 +32,22 @@ class AppTheme {
   static const Color errorRed = Color(0xFFEF4444);
   static const Color warningOrange = Color(0xFFF59E0B);
 
-  static ThemeData get lightTheme {
+  /// Renvoie la couleur principale correspondant au mode actif
+  static Color primaryFor(AppMode mode) =>
+      mode == AppMode.shopper ? shopperOrange : clientGreen;
+
+  /// Renvoie la teinte de fond conteneur pour le mode actif
+  static Color surfaceTintFor(AppMode mode) =>
+      primaryFor(mode).withValues(alpha: 0.12);
+
+  /// Génère le thème complet de l'application selon le mode actif.
+  static ThemeData themeFor(AppMode mode) {
+    final primary = primaryFor(mode);
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryOrange,
-        primary: primaryOrange,
+        seedColor: primary,
+        primary: primary,
         secondary: violetAccent,
         surface: surfaceWhite,
         error: errorRed,
@@ -43,15 +64,19 @@ class AppTheme {
           color: textDark,
         ),
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceWhite,
-        indicatorColor: primaryOrange.withValues(alpha: 0.15),
+        indicatorColor: primary.withValues(alpha: 0.15),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(
+            return TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: primaryOrange,
+              color: primary,
             );
           }
           return const TextStyle(
@@ -62,7 +87,7 @@ class AppTheme {
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const IconThemeData(color: primaryOrange);
+            return IconThemeData(color: primary);
           }
           return const IconThemeData(color: textMuted);
         }),
@@ -84,7 +109,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: primaryOrange, width: 2),
+          borderSide: BorderSide(color: primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -95,7 +120,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryOrange,
+          backgroundColor: primary,
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
@@ -126,4 +151,6 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get lightTheme => themeFor(AppMode.client);
 }

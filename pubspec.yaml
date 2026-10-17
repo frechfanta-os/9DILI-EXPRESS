@@ -46,6 +46,9 @@ dependencies:
   flutter_map: ^8.3.2
   latlong2: ^0.10.1
   maplibre_gl: ^0.27.1
+  image_picker: ^1.2.4
+  firebase_messaging: ^17.0.0
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -69,10 +72,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Assets déclarés pour 9DILI EXPRESS : marqueurs cartographiques 3D et catalogue national
+  # Assets déclarés pour 9DILI EXPRESS : marqueurs cartographiques 3D, catalogue et identité visuelle
   assets:
     - assets/images/map_markers/
-    - assets/data/algeria_full_catalog.json
+    - assets/data/algeria_lsl_flat.json
+    - assets/branding/9dili/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -427,6 +427,7 @@ class ErrandService {
     required String bidId,
     required String shopperId,
     required double agreedCommission,
+    String? shopperPhone,
   }) async {
     await _firestore.runTransaction((transaction) async {
       final errandDocRef = _errandsRef.doc(errandId);
@@ -464,6 +465,8 @@ class ErrandService {
       // 2. Mettre à jour la course de façon atomique
       transaction.update(errandDocRef, {
         'shopperId': shopperId,
+        if (shopperPhone != null && shopperPhone.isNotEmpty)
+          'shopperPhone': shopperPhone,
         'negotiatedCommission': agreedCommission,
         'status': ErrandStatus.accepted,
         'updatedAt': FieldValue.serverTimestamp(),
@@ -589,6 +592,67 @@ class ErrandService {
     await _errandsRef.doc(errandId).update({
       'declinedShoppers': FieldValue.arrayUnion([shopperId]),
       'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ==========================================
+  // 5. ANNULATION ATOMIQUE CÔTÉ CLIENT
+  // ==========================================
+
+  /// Annulation atomique d'une course côté client.
+  /// Seul le client propriétaire peut annuler sa propre course.
+  /// Seuls les statuts autorisés (pending, accepted) peuvent être annulés.
+  /// Empêche toute condition de concurrence avec l'attribution d'un shoppeur via transaction Firestore.
+  Future<void> cancelErrand({
+    required String errandId,
+    required String clientId,
+    String? reason,
+  }) async {
+    await _firestore.runTransaction((transaction) async {
+      final docRef = _errandsRef.doc(errandId);
+      final snapshot = await transaction.get(docRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw StateError("Course introuvable: $errandId");
+      }
+
+      final data = snapshot.data()!;
+      final errandClientId = data['clientId'];
+      final currentStatus = data['status'];
+
+      // Seul le client propriétaire peut annuler sa commande
+      if (errandClientId != clientId) {
+        throw StateError(
+          "unauthorized: Seul le client propriétaire peut annuler cette commande.",
+        );
+      }
+
+      // Idempotence : si déjà annulée
+      if (currentStatus == ErrandStatus.cancelled) {
+        return;
+      }
+
+      // Règle métier : une course clôturée ne peut pas être annulée
+      if (currentStatus == ErrandStatus.completed) {
+        throw StateError(
+          "cannot_cancel_completed: Impossible d'annuler une course déjà terminée.",
+        );
+      }
+
+      // Contrôle de transition légitime
+      if (!ErrandStatus.isValidTransition(currentStatus, ErrandStatus.cancelled)) {
+        throw StateError(
+          "invalid_transition: Impossible d'annuler une course au statut '$currentStatus'.",
+        );
+      }
+
+      transaction.update(docRef, {
+        'status': ErrandStatus.cancelled,
+        'cancellationReason': reason ?? 'Annulée par le client',
+        'cancelledAt': FieldValue.serverTimestamp(),
+        'cancelledBy': clientId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     });
   }
 }

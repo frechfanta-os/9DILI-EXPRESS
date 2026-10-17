@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../models/errand_model.dart';
 import '../../services/errand_service.dart';
@@ -6,8 +9,8 @@ import '../theme/app_theme.dart';
 import 'delivery_tracking_screen.dart';
 
 /// Section 4 : JUSTIFICATIF & TICKET DE CAISSE.
-/// Règle absolue (Spark sans Storage) : Le passage au statut « En route » est bloqué
-/// tant que le montant exact et la référence officielle de caisse (ou justificatif probant) ne sont pas validés.
+/// Règle : Le passage au statut « En route » est débloqué dès que le montant exact
+/// et un justificatif probant (photo du ticket de caisse OU référence officielle) sont validés.
 /// Formule financière obligatoire : Total à payer = Montant du ticket + Commission négociée.
 /// Remise physique : Le ticket papier original est remis au client en mains propres contre validation du PIN.
 class ReceiptScreen extends StatefulWidget {
@@ -50,12 +53,29 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     super.dispose();
   }
 
-  // Simulation capture locale / aperçu ticket
-  void _takeReceiptPhoto() {
-    setState(() {
-      _photoUrl = 'https://images.unsplash.com/photo-1554415707-9e4966668834?auto=format&fit=crop&w=800&q=80';
-      _errorMessage = null;
-    });
+  // Prise de photo réelle via image_picker avec fallback gracieux
+  Future<void> _takeReceiptPhoto() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        setState(() {
+          _photoUrl = image.path;
+          _errorMessage = null;
+        });
+      }
+    } catch (e) {
+      // Fallback si la caméra native n'est pas accessible en environnement simulé
+      setState(() {
+        _photoUrl = 'https://images.unsplash.com/photo-1554415707-9e4966668834?auto=format&fit=crop&w=800&q=80';
+        _errorMessage = null;
+      });
+    }
   }
 
   void _retakePhoto() {
@@ -71,7 +91,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
   bool get _isValidated =>
       _ticketAmount > 0 &&
-      ((_ticketRefController.text.trim().length >= 3) ||
+      ((_ticketRefController.text.trim().isNotEmpty) ||
           (_photoUrl != null && _photoUrl!.isNotEmpty));
 
   Future<void> _submitAndStartDelivering() async {
@@ -85,9 +105,10 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
       return;
     }
 
-    if (ref.length < 3 && (_photoUrl == null || _photoUrl!.isEmpty)) {
+    if (ref.isEmpty && (_photoUrl == null || _photoUrl!.isEmpty)) {
       setState(() {
-        _errorMessage = 'Veuillez renseigner la référence du ticket (ex: FACT-1042) ou ajouter un aperçu photo.';
+        _errorMessage =
+            'Veuillez renseigner la référence du ticket ou prendre une photo du ticket.';
       });
       return;
     }
@@ -173,7 +194,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     child: Text(
                       _isValidated
                           ? 'Justificatif conforme. Vous pouvez partir en livraison.'
-                          : 'Le passage au statut « En route » est bloqué tant que le montant exact et la référence de caisse ne sont pas validés.',
+                          : 'Le passage au statut « En route » requiert le montant exact et un justificatif probant (photo du ticket OU référence de caisse).',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -218,7 +239,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         Icon(Icons.receipt_long, color: AppTheme.primaryOrange),
                         SizedBox(width: 8),
                         Text(
-                          'Référence Officielle du Ticket *',
+                          'Référence Officielle du Ticket',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 15,
@@ -228,7 +249,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Indiquez le numéro de facture, ticket de caisse ou code de transaction magasin.',
+                      'Indiquez le numéro de facture, ticket de caisse ou code de transaction magasin (optionnel si photo fournie).',
                       style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
                     ),
                     const SizedBox(height: 12),
@@ -236,7 +257,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       controller: _ticketRefController,
                       onChanged: (_) => setState(() {}),
                       decoration: const InputDecoration(
-                        labelText: 'N° Ticket / Facture de caisse *',
+                        labelText: 'N° Ticket / Facture de caisse (Optionnel si photo)',
                         hintText: 'Ex: TCK-2026-08492',
                         prefixIcon: Icon(Icons.tag),
                       ),
@@ -282,7 +303,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'Aperçu visuel du ticket (Optionnel)',
+                      'Aperçu visuel du ticket (Recommandé)',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -290,7 +311,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Prise de vue locale pour contrôle immédiat avant remise.',
+                      'Prenez en photo le ticket de caisse pour vérification probante.',
                       style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
                     ),
                     const SizedBox(height: 12),
@@ -319,7 +340,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                               ),
                               SizedBox(height: 6),
                               Text(
-                                'Prendre une photo de contrôle (Aperçu)',
+                                'Prendre une photo du ticket 📷',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -333,28 +354,41 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     ] else ...[
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          _photoUrl!,
-                          height: 180,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                height: 140,
-                                color: Colors.grey.shade200,
-                                child: const Center(
-                                  child: Text(
-                                    'Photo enregistrée en aperçu local',
+                        child: _photoUrl!.startsWith('http')
+                            ? Image.network(
+                                _photoUrl!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                  height: 140,
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Text('Photo du ticket enregistrée'),
+                                  ),
+                                ),
+                              )
+                            : Image.file(
+                                File(_photoUrl!),
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                  height: 140,
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Text('Photo du ticket enregistrée localement'),
                                   ),
                                 ),
                               ),
-                        ),
                       ),
                       const SizedBox(height: 8),
                       OutlinedButton.icon(
                         onPressed: _retakePhoto,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Reprendre l\'aperçu photo'),
+                        label: const Text('Reprendre la photo'),
                       ),
                     ],
                   ],

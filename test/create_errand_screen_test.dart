@@ -222,8 +222,8 @@ void main() {
     testWidgets('5. Test de régression : le catalogue réel ne reste jamais vide', (
       tester,
     ) async {
-      // Test avec le catalogue complet national de 2 261 produits
-      final realFile = File('assets/data/algeria_full_catalog.json');
+      // Test avec le catalogue officiel national de 2 261 produits
+      final realFile = File('assets/data/algeria_lsl_flat.json');
       expect(realFile.existsSync(), isTrue);
 
       final fullCatalogService = ProductCatalogService();
@@ -231,7 +231,7 @@ void main() {
       await fullCatalogService.loadCatalog(rawJsonString: fullContent);
 
       expect(fullCatalogService.productCount, greaterThan(2200));
-      expect(fullCatalogService.categories.length, greaterThanOrEqualTo(25));
+      expect(fullCatalogService.categories.length, greaterThanOrEqualTo(9));
 
       final testWidget = MaterialApp(
         theme: AppTheme.lightTheme,
@@ -247,8 +247,8 @@ void main() {
 
       // Les rayons réels doivent être rendus
       expect(find.widgetWithText(ChoiceChip, 'Tous les rayons'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Fruits & Légumes'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Boissons'), findsOneWidget);
+      expect(find.widgetWithText(ChoiceChip, 'Marché Frais & Souk'), findsOneWidget);
+      expect(find.widgetWithText(ChoiceChip, 'Boissons & Cave à Eaux'), findsOneWidget);
 
       // Des cartes produits réelles doivent être affichées immédiatement
       expect(find.byType(Card), findsWidgets);

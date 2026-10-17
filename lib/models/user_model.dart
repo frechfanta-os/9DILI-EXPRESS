@@ -159,6 +159,17 @@ class UserModel {
   ShopperTransportType get transport =>
       ShopperTransportTypeExtension.fromString(transportType);
 
+  /// Validation d'un numéro de téléphone (au moins 9 chiffres, format national algérien ou international).
+  static bool isValidPhone(String? phone) {
+    if (phone == null) return false;
+    final cleaned = phone.replaceAll(RegExp(r'[\s\-\(\)\.]'), '');
+    if (cleaned.isEmpty) return false;
+    return RegExp(r'^\+?[0-9]{9,15}$').hasMatch(cleaned);
+  }
+
+  /// Indique si l'utilisateur possède un numéro de téléphone valide requis pour commander ou livrer.
+  bool get hasValidPhone => isValidPhone(phone);
+
   /// Vérifie la compatibilité du moyen de transport avec le poids estimé des courses.
   bool canCarry(double estimatedWeightKg) =>
       estimatedWeightKg <= transport.maxWeightKg;
