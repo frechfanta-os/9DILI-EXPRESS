@@ -73,11 +73,15 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     } else if (widget.initialAddress != null &&
         widget.initialAddress!.isNotEmpty &&
         !widget.initialAddress!.contains('détection') &&
-        !widget.initialAddress!.contains('Hydra')) {
+        !widget.initialAddress!.contains('Hydra') &&
+        !widget.initialAddress!.contains('Algérie') &&
+        !widget.initialAddress!.contains('introuvable') &&
+        !widget.initialAddress!.contains('requise') &&
+        !widget.initialAddress!.contains('désactivée')) {
       _addressCtrl = TextEditingController(text: widget.initialAddress);
     } else {
       _addressCtrl = TextEditingController(
-        text: 'Position GPS en détection...',
+        text: 'Acquisition du signal GPS...',
       );
       _autoFetchInitialGps();
     }
@@ -95,6 +99,41 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
 
   Future<void> _autoFetchInitialGps() async {
     try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() {
+            _addressCtrl.text = 'Localisation désactivée — Activez le GPS 📍';
+            _deliveryGeoPoint = null;
+          });
+        }
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() {
+              _addressCtrl.text = 'Autorisation GPS requise ⚠️';
+              _deliveryGeoPoint = null;
+            });
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() {
+            _addressCtrl.text = 'GPS bloqué — Paramètres système requis ⚙️';
+            _deliveryGeoPoint = null;
+          });
+        }
+        return;
+      }
+
       final lastPos = await Geolocator.getLastKnownPosition();
       if (lastPos != null && mounted) {
         setState(() {
@@ -103,20 +142,48 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
               'Position GPS certifiée (${lastPos.latitude.toStringAsFixed(5)}, ${lastPos.longitude.toStringAsFixed(5)})';
         });
       }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 5),
-        ),
-      );
-      if (mounted) {
+
+      Position? freshPos;
+      try {
+        freshPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
+      } catch (_) {
+        try {
+          freshPos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: Duration(seconds: 5),
+            ),
+          );
+        } catch (_) {}
+      }
+
+      if (freshPos != null && mounted) {
+        final resolvedPos = freshPos;
         setState(() {
-          _deliveryGeoPoint = GeoPoint(pos.latitude, pos.longitude);
+          _deliveryGeoPoint =
+              GeoPoint(resolvedPos.latitude, resolvedPos.longitude);
           _addressCtrl.text =
-              'Position GPS certifiée (${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)})';
+              'Position GPS certifiée (${resolvedPos.latitude.toStringAsFixed(5)}, ${resolvedPos.longitude.toStringAsFixed(5)})';
+        });
+      } else if (_deliveryGeoPoint == null && mounted) {
+        setState(() {
+          _addressCtrl.text =
+              'Signal GPS introuvable — Touchez pour réessayer 🔄';
         });
       }
-    } catch (_) {}
+    } catch (_) {
+      if (mounted && _deliveryGeoPoint == null) {
+        setState(() {
+          _addressCtrl.text =
+              'Signal GPS introuvable — Touchez pour réessayer 🔄';
+        });
+      }
+    }
   }
 
   @override
@@ -1152,11 +1219,19 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     TextField(
                       controller: _addressCtrl,
                       readOnly: true,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Adresse de livraison certifiée par GPS *',
-                        prefixIcon: Icon(
+                        prefixIcon: const Icon(
                           Icons.verified_user,
                           color: AppTheme.accentGreen,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: const Icon(
+                            Icons.my_location,
+                            color: AppTheme.primaryOrange,
+                          ),
+                          tooltip: 'Actualiser ma position GPS',
+                          onPressed: () => _fetchCurrentGps(setSheetState),
                         ),
                         helperText:
                             'Position verrouillée par GPS contre la fraude',

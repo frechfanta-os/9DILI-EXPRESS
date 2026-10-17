@@ -63,6 +63,41 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initGpsLocation() async {
     try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          setState(() {
+            _detectedGpsAddress = 'Localisation désactivée — Activez le GPS 📍';
+            _currentGeoPoint = null;
+          });
+        }
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            setState(() {
+              _detectedGpsAddress = 'Autorisation GPS requise ⚠️';
+              _currentGeoPoint = null;
+            });
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          setState(() {
+            _detectedGpsAddress = 'GPS bloqué — Paramètres système requis ⚙️';
+            _currentGeoPoint = null;
+          });
+        }
+        return;
+      }
+
       final lastPos = await Geolocator.getLastKnownPosition();
       if (lastPos != null && mounted) {
         setState(() {
@@ -71,23 +106,45 @@ class _HomeScreenState extends State<HomeScreen> {
               'Position GPS certifiée (${lastPos.latitude.toStringAsFixed(5)}, ${lastPos.longitude.toStringAsFixed(5)})';
         });
       }
-      final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 4),
-        ),
-      );
-      if (mounted) {
+
+      Position? freshPos;
+      try {
+        freshPos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
+      } catch (_) {
+        try {
+          freshPos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.low,
+              timeLimit: Duration(seconds: 5),
+            ),
+          );
+        } catch (_) {}
+      }
+
+      if (freshPos != null && mounted) {
+        final resolvedPos = freshPos;
         setState(() {
-          _currentGeoPoint = GeoPoint(pos.latitude, pos.longitude);
+          _currentGeoPoint =
+              GeoPoint(resolvedPos.latitude, resolvedPos.longitude);
           _detectedGpsAddress =
-              'Position GPS certifiée (${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)})';
+              'Position GPS certifiée (${resolvedPos.latitude.toStringAsFixed(5)}, ${resolvedPos.longitude.toStringAsFixed(5)})';
+        });
+      } else if (_currentGeoPoint == null && mounted) {
+        setState(() {
+          _detectedGpsAddress =
+              'Signal GPS introuvable — Touchez pour actualiser 🔄';
         });
       }
     } catch (_) {
-      if (mounted && _detectedGpsAddress.contains('détection')) {
+      if (mounted && _currentGeoPoint == null) {
         setState(() {
-          _detectedGpsAddress = 'Position GPS certifiée (Algérie)';
+          _detectedGpsAddress =
+              'Signal GPS introuvable — Touchez pour actualiser 🔄';
         });
       }
     }

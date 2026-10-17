@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'firebase_options.dart';
 import 'services/auth_service.dart';
@@ -125,16 +126,30 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
     _catalogService.loadCatalog();
     UserModeService.instance.init();
 
-    _requestStartupPermissions();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestStartupPermissions();
+    });
     _setupNotificationListeners();
   }
 
   Future<void> _requestStartupPermissions() async {
     if (kIsWeb) return;
     try {
-      // P2-1: Seules la géolocalisation et la caméra sont demandées au démarrage
-      // La permission notification est déléguée au moment opportun (connexion utilisateur)
-      await [Permission.location, Permission.camera].request();
+      // 1. Demande proactive des permissions essentielles via PermissionHandler
+      // Notifications (Android 13+ / API 33+)
+      if (await Permission.notification.isDenied) {
+        await Permission.notification.request();
+      }
+      // Caméra (pour le scan des tickets de caisse)
+      if (await Permission.camera.isDenied) {
+        await Permission.camera.request();
+      }
+
+      // 2. Demande explicite de géolocalisation native via Geolocator
+      final locationStatus = await Geolocator.checkPermission();
+      if (locationStatus == LocationPermission.denied) {
+        await Geolocator.requestPermission();
+      }
     } catch (e) {
       debugPrint('Startup permissions request error: $e');
     }
