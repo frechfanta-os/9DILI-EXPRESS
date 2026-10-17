@@ -8,6 +8,7 @@ import 'firebase_options.dart';
 import 'services/auth_service.dart';
 import 'services/user_service.dart';
 import 'services/errand_service.dart';
+import 'services/product_catalog_service.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/screens/auth_screen.dart';
 import 'ui/screens/home_screen.dart';
@@ -60,6 +61,7 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
   late final UserService _userService;
   late final AuthService _authService;
   late final ErrandService _errandService;
+  late final ProductCatalogService _catalogService;
 
   @override
   void initState() {
@@ -67,6 +69,8 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
     _userService = UserService();
     _authService = AuthService(userService: _userService);
     _errandService = ErrandService();
+    _catalogService = ProductCatalogService.instance;
+    _catalogService.loadCatalog();
   }
 
   @override
@@ -93,6 +97,7 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
               authService: _authService,
               userService: _userService,
               errandService: _errandService,
+              catalogService: _catalogService,
             );
           }
 

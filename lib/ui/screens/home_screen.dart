@@ -1,19 +1,18 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import '../../models/errand_model.dart';
-import '../../models/errand_item_model.dart';
 import '../../models/errand_bid_model.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 import '../../services/errand_service.dart';
 import '../../services/user_service.dart';
+import '../../services/product_catalog_service.dart';
 import '../theme/app_theme.dart';
 import 'profile_screen.dart';
 import 'shopping_mode_screen.dart';
 import 'receipt_screen.dart';
 import 'delivery_tracking_screen.dart';
+import 'create_errand_screen.dart';
 
 /// Écran principal 9DILI EXPRESS (Stitch UI/UX V2).
 /// Adapte l'expérience selon le rôle (Client vs Shopper).
@@ -21,12 +20,14 @@ class HomeScreen extends StatefulWidget {
   final AuthService authService;
   final UserService userService;
   final ErrandService errandService;
+  final ProductCatalogService? catalogService;
 
   const HomeScreen({
     super.key,
     required this.authService,
     required this.userService,
     required this.errandService,
+    this.catalogService,
   });
 
   @override
@@ -36,177 +37,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
 
-  String _generateSecurePin() {
-    final rnd = Random();
-    return (1000 + rnd.nextInt(9000)).toString();
-  }
-
   // ==========================================
-  // PARCOURS CLIENT : CRÉATION DE LISTE
+  // PARCOURS CLIENT : CRÉATION DE LISTE & CATALOGUE
   // ==========================================
 
   void _openCreateListDialog(String clientId) {
-    final storeCtrl = TextEditingController();
-    final addressCtrl = TextEditingController(
-      text: 'Cité 1000 Logts, Bât 12, Hydra, Alger',
-    );
-    final budgetCtrl = TextEditingController(text: '2500');
-    final item1Ctrl = TextEditingController();
-    final item2Ctrl = TextEditingController();
-    final generatedPin = _generateSecurePin();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Créer ma liste de courses 📝',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: storeCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Nom du commerce / magasin *',
-                  hintText: 'Ex: Supermarché Uno, Supérette El Baraka...',
-                  prefixIcon: Icon(Icons.storefront_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: addressCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Adresse de livraison exacte *',
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: budgetCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Budget estimé des achats (DA)',
-                  prefixIcon: Icon(Icons.payments_outlined),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: item1Ctrl,
-                decoration: const InputDecoration(
-                  labelText: 'Article 1 (Quantité & nom)',
-                  hintText: 'Ex: 2x Lait Candia 1L',
-                  prefixIcon: Icon(Icons.add_shopping_cart),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: item2Ctrl,
-                decoration: const InputDecoration(
-                  labelText: 'Article 2 (Optionnel)',
-                  hintText: 'Ex: 1kg Bananes mûres',
-                  prefixIcon: Icon(Icons.add_shopping_cart),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.violetSurface,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.security, color: AppTheme.violetAccent),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Code PIN de sécurité généré : $generatedPin\n(À donner au shoppeur à la livraison contre paiement)',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textDark,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  if (storeCtrl.text.trim().isEmpty ||
-                      addressCtrl.text.trim().isEmpty) {
-                    return;
-                  }
-                  final budget =
-                      double.tryParse(budgetCtrl.text.trim()) ?? 2500.0;
-                  final newErrand = ErrandModel(
-                    errandId: '',
-                    clientId: clientId,
-                    storeName: storeCtrl.text.trim(),
-                    deliveryAddress: addressCtrl.text.trim(),
-                    estimatedBudget: budget,
-                    securePin: generatedPin,
-                    storeDistanceKm: 1.8,
-                    etaMinutes: 20,
-                    status: ErrandStatus.pending,
-                  );
-
-                  final items = <ErrandItemModel>[];
-                  if (item1Ctrl.text.trim().isNotEmpty) {
-                    items.add(
-                      ErrandItemModel(
-                        itemId: '',
-                        name: item1Ctrl.text.trim(),
-                        quantity: 1,
-                        unit: 'x',
-                      ),
-                    );
-                  }
-                  if (item2Ctrl.text.trim().isNotEmpty) {
-                    items.add(
-                      ErrandItemModel(
-                        itemId: '',
-                        name: item2Ctrl.text.trim(),
-                        quantity: 1,
-                        unit: 'x',
-                      ),
-                    );
-                  }
-
-                  await widget.errandService.createErrand(
-                    newErrand,
-                    items: items,
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                },
-                child: const Text('Publier ma liste sur le Radar'),
-              ),
-            ],
-          ),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CreateErrandScreen(
+          clientId: clientId,
+          errandService: widget.errandService,
+          catalogService:
+              widget.catalogService ?? ProductCatalogService.instance,
+          initialAddress: 'Cité 1000 Logts, Bât 12, Hydra, Alger',
         ),
       ),
     );

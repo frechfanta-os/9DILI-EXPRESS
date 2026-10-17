@@ -27,6 +27,12 @@ class ProductCatalogService {
   static const String defaultAssetPath =
       'assets/data/algeria_full_catalog.json';
 
+  /// Instance partagée (Singleton) pour réutilisation à travers l'application
+  static final ProductCatalogService instance = ProductCatalogService();
+
+  /// Callback de diagnostic pour tracer le cycle de vie du catalogue
+  static void Function(String event, Map<String, dynamic> data)? onDiagnosticEvent;
+
   List<ProductModel> _products = [];
   final Map<String, ProductModel> _barcodeMap = {};
   final List<String> _categories = [];
@@ -34,10 +40,15 @@ class ProductCatalogService {
 
   bool _isLoaded = false;
   bool _isLoading = false;
+  String? _lastError;
 
   bool get isLoaded => _isLoaded;
+  bool get isLoading => _isLoading;
+  String? get lastError => _lastError;
   int get productCount => _products.length;
+  int get categoryCount => _categories.length;
   List<String> get categories => List.unmodifiable(_categories);
+  List<ProductModel> get allProducts => List.unmodifiable(_products);
 
   /// Normalise une chaîne de caractères pour une recherche robuste (Français + Arabe + Darja).
   static String normalize(String? text) {
@@ -80,6 +91,8 @@ class ProductCatalogService {
     if (_isLoading) return;
 
     _isLoading = true;
+    _lastError = null;
+    onDiagnosticEvent?.call('catalogLoadStarted', {'assetPath': assetPath});
 
     try {
       final String jsonContent;
@@ -150,8 +163,23 @@ class ProductCatalogService {
         ..addAll(categorySet.toList()..sort());
 
       _isLoaded = true;
+      _lastError = null;
+
+      // Notification des événements de diagnostic
+      onDiagnosticEvent?.call('catalogLoadSucceeded', {
+        'productCount': _products.length,
+        'categoryCount': _categories.length,
+      });
+      onDiagnosticEvent?.call('catalogProductCount', {
+        'count': _products.length,
+      });
+      onDiagnosticEvent?.call('catalogCategoryCount', {
+        'count': _categories.length,
+      });
     } catch (e) {
       _isLoaded = false;
+      _lastError = e.toString();
+      onDiagnosticEvent?.call('catalogLoadError', {'error': e.toString()});
       throw CatalogLoadException(
         'Impossible de charger le catalogue algérien : $e',
         e,
@@ -241,5 +269,6 @@ class ProductCatalogService {
     _normalizedSearchCorpus.clear();
     _isLoaded = false;
     _isLoading = false;
+    _lastError = null;
   }
 }

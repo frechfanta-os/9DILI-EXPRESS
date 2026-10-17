@@ -142,6 +142,45 @@ void main() {
       );
     });
 
+    test('Événements de diagnostic émis lors du chargement', () async {
+      final events = <String>[];
+      final eventData = <String, dynamic>{};
+
+      ProductCatalogService.onDiagnosticEvent = (event, data) {
+        events.add(event);
+        eventData.addAll(data);
+      };
+
+      await service.loadCatalog(rawJsonString: sampleJson);
+
+      expect(events, contains('catalogLoadStarted'));
+      expect(events, contains('catalogLoadSucceeded'));
+      expect(events, contains('catalogProductCount'));
+      expect(events, contains('catalogCategoryCount'));
+      expect(eventData['productCount'], equals(3));
+      expect(eventData['categoryCount'], equals(2));
+
+      ProductCatalogService.onDiagnosticEvent = null;
+    });
+
+    test('Événement de diagnostic en cas d\'erreur de chargement', () async {
+      String? errorReported;
+      ProductCatalogService.onDiagnosticEvent = (event, data) {
+        if (event == 'catalogLoadError') {
+          errorReported = data['error']?.toString();
+        }
+      };
+
+      try {
+        await service.loadCatalog(rawJsonString: 'invalid-json');
+      } catch (_) {}
+
+      expect(errorReported, isNotNull);
+      expect(service.lastError, isNotNull);
+
+      ProductCatalogService.onDiagnosticEvent = null;
+    });
+
     test('Chargement réel du fichier catalogue complet assets/data/algeria_full_catalog.json', () async {
       final file = File('assets/data/algeria_full_catalog.json');
       expect(file.existsSync(), isTrue);
@@ -152,6 +191,13 @@ void main() {
       expect(service.isLoaded, isTrue);
       expect(service.productCount, greaterThan(2200));
       expect(service.categories, isNotEmpty);
+      expect(service.categoryCount, greaterThanOrEqualTo(25));
+
+      // Test de non-régression : les rayons et les produits ne sont jamais vides
+      expect(service.categories, contains('Fruits & Légumes'));
+      expect(service.categories, contains('Boissons'));
+      final freshItems = service.getByCategory('Fruits & Légumes');
+      expect(freshItems, isNotEmpty);
 
       // Vérification d'une recherche réelle dans le catalogue national
       final searchResults = service.search('lait');
