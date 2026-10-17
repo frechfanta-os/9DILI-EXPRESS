@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
+import '../../models/user_model.dart';
 import '../theme/app_theme.dart';
 
 /// Écran d'authentification 9DILI EXPRESS (Stitch UI/UX V2).
@@ -30,9 +31,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _fullNameController = TextEditingController();
-  final _phoneController = TextEditingController(); // Strictement facultatif
-
-  String _selectedRole = 'client'; // 'client' ou 'shopper'
+  final _phoneController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
@@ -67,8 +66,8 @@ class _AuthScreenState extends State<AuthScreen> {
         email: email,
         password: password,
         fullName: _fullNameController.text.trim(),
-        role: _selectedRole,
-        phone: _phoneController.text.trim(), // Strictement optionnel
+        role: 'client',
+        phone: _phoneController.text.trim(),
       );
     }
 
@@ -90,7 +89,7 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     final result = await widget.authService.signInWithGoogle(
-      defaultRole: _selectedRole,
+      defaultRole: 'client',
     );
 
     if (mounted) {
@@ -396,7 +395,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             textCapitalization: TextCapitalization.words,
                             decoration: const InputDecoration(
                               labelText: 'Nom complet *',
-                              hintText: 'Ex: Amine Benali',
+                              hintText: 'Nom et prénom',
                               prefixIcon: Icon(Icons.person_outline),
                             ),
                             validator: (val) {
@@ -408,115 +407,23 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Choix du Rôle (Client / Shopper)
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppTheme.violetSurface,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => setState(
-                                      () => _selectedRole = 'client',
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _selectedRole == 'client'
-                                            ? Colors.white
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: _selectedRole == 'client'
-                                            ? [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.06),
-                                                  blurRadius: 4,
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      child: Text(
-                                        'Client (Je commande)',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: _selectedRole == 'client'
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          color: _selectedRole == 'client'
-                                              ? AppTheme.primaryOrange
-                                              : AppTheme.textMuted,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: () => setState(
-                                      () => _selectedRole = 'shopper',
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 10,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _selectedRole == 'shopper'
-                                            ? Colors.white
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(10),
-                                        boxShadow: _selectedRole == 'shopper'
-                                            ? [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withValues(alpha: 0.06),
-                                                  blurRadius: 4,
-                                                ),
-                                              ]
-                                            : null,
-                                      ),
-                                      child: Text(
-                                        'Shoppeur (Je livre)',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: _selectedRole == 'shopper'
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          color: _selectedRole == 'shopper'
-                                              ? AppTheme.primaryOrange
-                                              : AppTheme.textMuted,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-
-                          // Champ Numéro de téléphone (STRICTEMENT OPTIONNEL)
+                          // Champ Numéro de téléphone (OBLIGATOIRE, sans observation)
                           TextFormField(
                             controller: _phoneController,
                             keyboardType: TextInputType.phone,
                             decoration: const InputDecoration(
-                              labelText: 'Numéro de téléphone (Optionnel)',
-                              hintText: 'Facultatif : vous pouvez laisser vide',
-                              helperText: 'Non obligatoire - aucun SMS requis',
-                              helperStyle: TextStyle(
-                                color: AppTheme.accentGreen,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              labelText: 'Numéro de téléphone *',
                               prefixIcon: Icon(Icons.phone_outlined),
                             ),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Veuillez saisir votre numéro de téléphone';
+                              }
+                              if (!UserModel.isValidPhone(val.trim())) {
+                                return 'Numéro de téléphone invalide (au moins 9 chiffres)';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 14),
                         ],

@@ -22,20 +22,17 @@ service cloud.firestore {
       // Lecture autorisée pour tout utilisateur authentifié (affichage profil, nom, note)
       allow read: if isAuthenticated();
 
-      // Création : Rôle initial limité à 'client' ou 'shopper', rating fixé à 5.0, trésorerie initiale à 0.0
+      // Création : Utilisateur pour lui-même
       allow create: if isOwner(userId) &&
                        request.resource.data.uid == userId &&
-                       request.resource.data.role in ['client', 'shopper'] &&
-                       request.resource.data.rating == 5.0 &&
-                       request.resource.data.availableCash == 0.0;
+                       (!('availableCash' in request.resource.data) ||
+                        (request.resource.data.availableCash is number && request.resource.data.availableCash >= 0.0));
 
-      // Mise à jour : Interdiction de modifier son propre rôle ou sa note, trésorerie déclarée modifiable si >= 0
+      // Mise à jour : Le propriétaire peut mettre à jour son profil (nom, téléphone, trésorerie, statut en ligne, localisation, mode de transport)
       allow update: if isOwner(userId) &&
                        request.resource.data.uid == resource.data.uid &&
-                       request.resource.data.role == resource.data.role &&
-                       request.resource.data.rating == resource.data.rating &&
-                       request.resource.data.availableCash is number &&
-                       request.resource.data.availableCash >= 0.0;
+                       (!('availableCash' in request.resource.data) || 
+                        (request.resource.data.availableCash is number && request.resource.data.availableCash >= 0.0));
 
       // Sous-collection des jetons FCM (/users/{userId}/fcm_tokens/{tokenId})
       match /fcm_tokens/{tokenId} {

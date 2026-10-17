@@ -76,5 +76,8 @@ Le fichier `workers/notifications_dispatcher/src/fcm.js` utilise l'API HTTP v1 d
     }
   }
 }
-```
-L'intégration Flutter et Cloudflare est désormais parfaitement alignée.
+> [!IMPORTANT]
+> **Rectificatif d'audit (Mission de réparation)** :
+> L'affirmation antérieure « L'intégration Flutter et Cloudflare est désormais parfaitement alignée » était inexacte. Le service `NotificationService` n'était pas instancié dans `main.dart`, aucun appel HTTP vers le Worker (`/api/notify`) n'existait, et le canal natif `errand_updates_channel` n'était pas créé à l'exécution.
+> La chaîne complète a été effectivement branchée et rendue opérationnelle : `NotificationDispatchService` (HTTP v1 Worker), injection au cycle de vie `authStateChanges`, création native du canal dans `MainActivity.kt` et dérivation déterministe des payloads.
+

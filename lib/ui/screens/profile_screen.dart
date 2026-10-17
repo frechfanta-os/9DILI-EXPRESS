@@ -468,8 +468,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             keyboardType: TextInputType.phone,
                             decoration: const InputDecoration(
                               labelText: 'Numéro de téléphone *',
-                              hintText: 'Ex: 0555123456 ou +213555123456',
-                              helperText: 'Obligatoire pour passer ou livrer des commandes',
                               prefixIcon: Icon(Icons.phone_outlined),
                             ),
                             validator: (v) {

@@ -18,7 +18,7 @@ class MockUserServiceForModeTest extends UserService {
 
   @override
   Stream<UserModel?> streamUser(String uid) =>
-      Stream.value(users[uid] ?? UserModel(uid: uid, fullName: 'Amine Benali'));
+      Stream.value(users[uid] ?? UserModel(uid: uid, fullName: 'Utilisateur Test'));
 
   @override
   Future<void> saveUser(UserModel user) async {

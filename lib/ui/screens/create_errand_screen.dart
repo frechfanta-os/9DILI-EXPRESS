@@ -67,9 +67,21 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     _storeCtrl = TextEditingController(
       text: widget.initialStoreName ?? '',
     );
-    _addressCtrl = TextEditingController(
-      text: widget.initialAddress ?? 'Cité 1000 Logts, Bât 12, Hydra, Alger',
-    );
+    if (widget.initialGeoPoint != null) {
+      _addressCtrl = TextEditingController(
+        text: 'Position GPS certifiée (${widget.initialGeoPoint!.latitude.toStringAsFixed(5)}, ${widget.initialGeoPoint!.longitude.toStringAsFixed(5)})',
+      );
+    } else if (widget.initialAddress != null &&
+        widget.initialAddress!.isNotEmpty &&
+        !widget.initialAddress!.contains('détection') &&
+        !widget.initialAddress!.contains('Hydra')) {
+      _addressCtrl = TextEditingController(text: widget.initialAddress);
+    } else {
+      _addressCtrl = TextEditingController(
+        text: 'Position GPS en détection...',
+      );
+      _autoFetchInitialGps();
+    }
     _searchCtrl = TextEditingController();
     _generatedPin = _generateCryptographicPin();
 
@@ -80,6 +92,32 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     if (_isLoading) {
       _initCatalog();
     }
+  }
+
+  Future<void> _autoFetchInitialGps() async {
+    try {
+      final lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null && mounted) {
+        setState(() {
+          _deliveryGeoPoint = GeoPoint(lastPos.latitude, lastPos.longitude);
+          _addressCtrl.text =
+              'Position GPS certifiée (${lastPos.latitude.toStringAsFixed(5)}, ${lastPos.longitude.toStringAsFixed(5)})';
+        });
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _deliveryGeoPoint = GeoPoint(pos.latitude, pos.longitude);
+          _addressCtrl.text =
+              'Position GPS certifiée (${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)})';
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -319,7 +357,6 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     final nameCtrl = TextEditingController();
     final qtyCtrl = TextEditingController(text: '1');
     final detailsCtrl = TextEditingController();
-    final budgetCtrl = TextEditingController();
     String unit = ErrandItemUnit.piece;
 
     showDialog(
@@ -427,14 +464,6 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                TextField(
-                  controller: budgetCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Budget estimé en DA (Facultatif)',
-                    hintText: 'Ex: 650',
-                  ),
-                ),
               ],
             ),
           ),
@@ -459,7 +488,6 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                   return;
                 }
                 final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1.0;
-                final budget = double.tryParse(budgetCtrl.text.trim());
                 final details = detailsCtrl.text.trim();
 
                 setState(() {
@@ -472,7 +500,6 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       notes: details,
                       isCustom: true,
                       photoUrl: currentImagePath,
-                      estimatedPrice: budget,
                       status: ErrandItemStatus.pending,
                     ),
                   );
@@ -706,6 +733,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
 
       setState(() {
         _deliveryGeoPoint = GeoPoint(pos.latitude, pos.longitude);
+        _addressCtrl.text =
+            'Position GPS certifiée (${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)})';
       });
       setSheetState(() {
         _isFetchingGps = false;
@@ -798,16 +827,15 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     if (result != null) {
       setState(() {
         _deliveryGeoPoint = GeoPoint(result.latitude, result.longitude);
+        _addressCtrl.text =
+            'Position GPS pointée (${result.latitude.toStringAsFixed(5)}, ${result.longitude.toStringAsFixed(5)})';
       });
       setSheetState(() {});
     }
   }
 
   void _openCartModal() {
-    final budgetCtrl = TextEditingController(
-      text: _estimatedTotalBudget.toStringAsFixed(0),
-    );
-
+    final ceilingBudgetCtrl = TextEditingController();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -1003,7 +1031,7 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                             ],
                           ),
                           subtitle: Text(
-                            '${custom.quantity.toStringAsFixed(custom.quantity % 1 == 0 ? 0 : 1)} ${custom.unit}${custom.notes.isNotEmpty ? ' • ${custom.notes}' : ''}${custom.estimatedPrice != null ? ' • ~${custom.estimatedPrice!.toStringAsFixed(0)} DA' : ''}',
+                            '${custom.quantity.toStringAsFixed(custom.quantity % 1 == 0 ? 0 : 1)} ${custom.unit}${custom.notes.isNotEmpty ? ' • ${custom.notes}' : ''}',
                             style: const TextStyle(fontSize: 12),
                           ),
                           trailing: Row(
@@ -1061,9 +1089,11 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: _addressCtrl,
+                      readOnly: true,
                       decoration: const InputDecoration(
-                        labelText: 'Adresse de livraison écrite *',
-                        prefixIcon: Icon(Icons.location_on_outlined),
+                        labelText: 'Adresse de livraison certifiée par GPS *',
+                        prefixIcon: Icon(Icons.verified_user, color: AppTheme.accentGreen),
+                        helperText: 'Position verrouillée par GPS contre la fraude',
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -1078,8 +1108,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: _deliveryGeoPoint != null
-                              ? AppTheme.accentGreen.withValues(alpha: 0.4)
-                              : AppTheme.warningOrange.withValues(alpha: 0.4),
+                            ? AppTheme.accentGreen.withValues(alpha: 0.4)
+                            : AppTheme.warningOrange.withValues(alpha: 0.4),
                         ),
                       ),
                       child: Column(
@@ -1168,14 +1198,17 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
+                    // Plafond de budget facultatif (approximatif ou exact)
                     TextField(
-                      controller: budgetCtrl,
+                      controller: ceilingBudgetCtrl,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Budget estimé des achats (DA)',
-                        prefixIcon: Icon(Icons.payments_outlined),
+                        labelText: 'Plafond de budget des achats (DA, Facultatif)',
+                        hintText: 'Ex: 3000 (Approximatif ou exact)',
+                        helperText: 'Fixez un plafond maximum indicatif pour votre commande',
+                        prefixIcon: Icon(Icons.account_balance_wallet_outlined),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -1216,7 +1249,14 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         final storeName = rawStore.isNotEmpty
                             ? rawStore
                             : 'Commerce de proximité / Supérette locale';
-                        final address = _addressCtrl.text.trim();
+                        String address = _addressCtrl.text.trim();
+
+                        if (_deliveryGeoPoint != null &&
+                            (address.isEmpty || address.contains('détection'))) {
+                          address =
+                              'Position GPS certifiée (${_deliveryGeoPoint!.latitude.toStringAsFixed(5)}, ${_deliveryGeoPoint!.longitude.toStringAsFixed(5)})';
+                          _addressCtrl.text = address;
+                        }
 
                         if (address.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -1240,8 +1280,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                           return;
                         }
 
-                        final budget = double.tryParse(budgetCtrl.text.trim()) ??
-                            _estimatedTotalBudget;
+                        final budget =
+                            double.tryParse(ceilingBudgetCtrl.text.trim()) ?? 0.0;
 
                         // Conversion des articles du panier
                         final items = <ErrandItemModel>[];
@@ -1389,10 +1429,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                               color: AppTheme.textMuted,
                             ),
                           ),
-                          Text(
-                            '~ ${_estimatedTotalBudget.toStringAsFixed(0)} DA',
-                            style: const TextStyle(
-                              fontSize: 18,
+                          const Text(
+                            'Liste prête 🛒',
+                            style: TextStyle(
+                              fontSize: 16,
                               fontWeight: FontWeight.w900,
                               color: AppTheme.primaryOrange,
                             ),

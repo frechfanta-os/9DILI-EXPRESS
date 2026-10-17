@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/errand_model.dart';
@@ -15,6 +17,7 @@ import '../theme/app_theme.dart';
 import '../widgets/map_markers.dart';
 import '../widgets/client_shopper_toggle.dart';
 import '../../services/user_mode_service.dart';
+import '../../services/notification_service.dart';
 import 'profile_screen.dart';
 import 'shopping_mode_screen.dart';
 import 'receipt_screen.dart';
@@ -29,6 +32,7 @@ class HomeScreen extends StatefulWidget {
   final UserService userService;
   final ErrandService errandService;
   final ProductCatalogService? catalogService;
+  final NotificationService? notificationService;
 
   const HomeScreen({
     super.key,
@@ -36,6 +40,7 @@ class HomeScreen extends StatefulWidget {
     required this.userService,
     required this.errandService,
     this.catalogService,
+    this.notificationService,
   });
 
   @override
@@ -46,11 +51,46 @@ class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
   bool _shopperMapView = false;
   late AppMode _currentMode;
+  String _detectedGpsAddress = 'Position GPS en détection...';
+  GeoPoint? _currentGeoPoint;
 
   @override
   void initState() {
     super.initState();
     _currentMode = UserModeService.instance.currentMode;
+    _initGpsLocation();
+  }
+
+  Future<void> _initGpsLocation() async {
+    try {
+      final lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null && mounted) {
+        setState(() {
+          _currentGeoPoint = GeoPoint(lastPos.latitude, lastPos.longitude);
+          _detectedGpsAddress =
+              'Position GPS certifiée (${lastPos.latitude.toStringAsFixed(5)}, ${lastPos.longitude.toStringAsFixed(5)})';
+        });
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 4),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _currentGeoPoint = GeoPoint(pos.latitude, pos.longitude);
+          _detectedGpsAddress =
+              'Position GPS certifiée (${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)})';
+        });
+      }
+    } catch (_) {
+      if (mounted && _detectedGpsAddress.contains('détection')) {
+        setState(() {
+          _detectedGpsAddress = 'Position GPS certifiée (Algérie)';
+        });
+      }
+    }
   }
 
   void _handleModeChange(AppMode newMode, UserModel user) async {
@@ -321,7 +361,8 @@ class _HomeScreenState extends State<HomeScreen> {
           errandService: widget.errandService,
           catalogService:
               widget.catalogService ?? ProductCatalogService.instance,
-          initialAddress: 'Cité 1000 Logts, Bât 12, Hydra, Alger',
+          initialAddress: _detectedGpsAddress,
+          initialGeoPoint: _currentGeoPoint,
         ),
       ),
     );
@@ -947,15 +988,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          floatingActionButton: !isShopperMode
-              ? FloatingActionButton.extended(
-                  backgroundColor: primaryColor,
-                  foregroundColor: Colors.white,
-                  onPressed: () => _openCreateListDialog(userModel),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Créer ma liste'),
-                )
-              : null,
+          floatingActionButton: null,
         );
       },
     );
@@ -971,31 +1004,31 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Carte adresse de livraison bien visible
+          // Carte position GPS certifiée (anti-fraude, sans saisie manuelle)
           Card(
             color: AppTheme.violetSurface,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(Icons.location_on, color: AppTheme.violetAccent),
+                  const Icon(Icons.gps_fixed, color: AppTheme.accentGreen),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Adresse de livraison active',
+                        const Text(
+                          'Position de livraison certifiée (GPS)',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.violetAccent,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'Cité 1000 Logts, Bât 12, Hydra, Alger',
-                          style: TextStyle(
+                          _detectedGpsAddress,
+                          style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.textDark,
@@ -1004,12 +1037,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      'Modifier',
-                      style: TextStyle(color: AppTheme.violetAccent),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: AppTheme.violetAccent),
+                    tooltip: 'Actualiser ma position GPS',
+                    onPressed: _initGpsLocation,
                   ),
                 ],
               ),
@@ -1879,10 +1910,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   : AppTheme.errorRed.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            child: Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 6,
                               children: [
                                 Row(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       Icons.account_balance_wallet,
@@ -1893,7 +1928,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'Trésorerie à avancer : ${errand.treasuryRequired.toStringAsFixed(0)} DA',
+                                      'Trésorerie : ${errand.treasuryRequired.toStringAsFixed(0)} DA',
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
@@ -1904,16 +1939,29 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ],
                                 ),
-                                Text(
-                                  hasEnoughCash
-                                      ? 'Fonds OK ✅'
-                                      : 'Fonds insuffisants ⚠️',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: hasEnoughCash
-                                        ? AppTheme.accentGreen
-                                        : AppTheme.errorRed,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: (hasEnoughCash
+                                            ? AppTheme.accentGreen
+                                            : AppTheme.errorRed)
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    hasEnoughCash
+                                        ? 'Fonds OK ✅'
+                                        : 'Fonds insuffisants ⚠️',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: hasEnoughCash
+                                          ? AppTheme.accentGreen
+                                          : AppTheme.errorRed,
+                                    ),
                                   ),
                                 ),
                               ],

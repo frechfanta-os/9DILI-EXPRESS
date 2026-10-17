@@ -192,7 +192,7 @@ void main() {
 
       // Panier contient 1 article
       expect(find.text('1 article au panier'), findsOneWidget);
-      expect(find.text('~ 120 DA'), findsOneWidget);
+      expect(find.text('Liste prête 🛒'), findsOneWidget);
 
       // Vérifier que le bouton de désélection (poubelle) est apparu sur la carte produit
       final deleteProductIcon = find.byIcon(Icons.delete_outline);
@@ -227,7 +227,6 @@ void main() {
       await tester.enterText(textFields.at(1), 'Chbiki artisanal'); // Nom
       await tester.enterText(textFields.at(2), '3'); // Quantité
       await tester.enterText(textFields.at(3), 'Traditionnel sans sel'); // Description
-      await tester.enterText(textFields.at(4), '90'); // Budget estimé
 
       // Valider l'ajout
       await tester.tap(find.text('Ajouter'));
@@ -235,7 +234,7 @@ void main() {
 
       // Le panier est mis à jour immédiatement
       expect(find.text('3 articles au panier'), findsOneWidget);
-      expect(find.text('~ 270 DA'), findsOneWidget); // 3 * 90 DA
+      expect(find.text('Liste prête 🛒'), findsOneWidget);
     });
 
     testWidgets('4. Suppression d\'un article personnalisé depuis le panier modal', (
@@ -251,7 +250,6 @@ void main() {
       final textFields = find.byType(TextField);
       await tester.enterText(textFields.at(1), 'Huile d\'olive kabyle');
       await tester.enterText(textFields.at(2), '2');
-      await tester.enterText(textFields.at(4), '800');
       await tester.tap(find.text('Ajouter'));
       await tester.pumpAndSettle();
 

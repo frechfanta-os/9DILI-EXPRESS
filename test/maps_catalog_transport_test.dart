@@ -114,7 +114,7 @@ void main() {
       );
       final shopperCar = UserModel(
         uid: 's2',
-        fullName: 'Amine Automobiliste',
+        fullName: 'Livreur Automobiliste',
         email: 'c@test.dz',
         transportType: 'car',
       );

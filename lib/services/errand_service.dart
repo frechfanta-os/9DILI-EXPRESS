@@ -1,11 +1,13 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/errand_model.dart';
 import '../models/errand_item_model.dart';
 import '../models/errand_bid_model.dart';
 import 'offline_pin_cache_service.dart';
+import 'notification_dispatch_service.dart';
 
 /// Statuts détaillés du contrôle de sécurité PIN.
 enum PinValidationStatus {
@@ -76,12 +78,17 @@ class PinValidationResult {
 class ErrandService {
   final FirebaseFirestore? _customFirestore;
   final OfflinePinCacheService _pinCacheService;
+  final NotificationDispatchService? _dispatchService;
 
   ErrandService({
     FirebaseFirestore? firestore,
     OfflinePinCacheService? pinCacheService,
+    NotificationDispatchService? notificationDispatchService,
   }) : _customFirestore = firestore,
-       _pinCacheService = pinCacheService ?? OfflinePinCacheService();
+       _pinCacheService = pinCacheService ?? OfflinePinCacheService(),
+       _dispatchService = notificationDispatchService;
+
+  NotificationDispatchService? get dispatchService => _dispatchService;
 
   FirebaseFirestore get _firestore =>
       _customFirestore ?? FirebaseFirestore.instance;
@@ -149,6 +156,21 @@ class ErrandService {
         batch.set(itemDoc, item.copyWith(itemId: itemDoc.id).toMap());
       }
       await batch.commit();
+    }
+
+    // Déclenchement non-bloquant de la notification et du radar intelligent
+    if (_dispatchService != null) {
+      _dispatchService.notify(
+        errandId: actualId,
+        eventType: 'new_errand_available',
+      ).catchError((e) {
+        debugPrint('ErrandService: new_errand_available notification error: $e');
+        return false;
+      });
+      _dispatchService.dispatchRadar(errandId: actualId).catchError((e) {
+        debugPrint('ErrandService: dispatchRadar non-blocking error: $e');
+        return null;
+      });
     }
 
     return actualId;
@@ -288,6 +310,15 @@ class ErrandService {
       'status': ErrandStatus.accepted,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    if (_dispatchService != null) {
+      _dispatchService.notify(
+        errandId: errandId,
+        eventType: 'errand_accepted',
+      ).catchError((e) {
+        debugPrint('ErrandService: errand_accepted notification error: $e');
+        return false;
+      });
+    }
     return true;
   }
 
@@ -307,6 +338,15 @@ class ErrandService {
       );
     }
     await updateErrandStatus(errandId, ErrandStatus.delivering);
+    if (_dispatchService != null) {
+      _dispatchService.notify(
+        errandId: errandId,
+        eventType: 'shopper_delivering',
+      ).catchError((e) {
+        debugPrint('ErrandService: shopper_delivering notification error: $e');
+        return false;
+      });
+    }
     return true;
   }
 
@@ -356,6 +396,15 @@ class ErrandService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
       await _pinCacheService.clearPin(errandId);
+      if (_dispatchService != null) {
+        _dispatchService.notify(
+          errandId: errandId,
+          eventType: 'errand_completed',
+        ).catchError((e) {
+          debugPrint('ErrandService: errand_completed notification error: $e');
+          return false;
+        });
+      }
       return PinValidationResult.success();
     } else {
       // Incrémentation des tentatives échouées
@@ -372,6 +421,18 @@ class ErrandService {
         return PinValidationResult.locked();
       }
       return PinValidationResult.invalidPin(3 - newFailedCount);
+    }
+  }
+
+  /// Notifie le client que le shopper est arrivé sur place au point de remise.
+  Future<void> notifyShopperArrived(String errandId) async {
+    try {
+      await _dispatchService?.notify(
+        errandId: errandId,
+        eventType: 'shopper_arrived',
+      );
+    } catch (e) {
+      debugPrint('ErrandService: shopper_arrived notification error: $e');
     }
   }
 
@@ -485,6 +546,16 @@ class ErrandService {
       }
     }
     await batch.commit();
+
+    if (_dispatchService != null) {
+      _dispatchService.notify(
+        errandId: errandId,
+        eventType: 'bid_accepted',
+      ).catchError((e) {
+        debugPrint('ErrandService: bid_accepted notification error: $e');
+        return false;
+      });
+    }
   }
 
   /// Refuse une offre spécifique.
@@ -530,7 +601,7 @@ class ErrandService {
     required String shopperId,
     double? agreedCommission,
   }) async {
-    return await _firestore.runTransaction<bool>((transaction) async {
+    final result = await _firestore.runTransaction<bool>((transaction) async {
       final docRef = _errandsRef.doc(errandId);
       final snapshot = await transaction.get(docRef);
 
@@ -581,6 +652,18 @@ class ErrandService {
       transaction.update(docRef, updateData);
       return true;
     });
+
+    if (result && _dispatchService != null) {
+      _dispatchService.notify(
+        errandId: errandId,
+        eventType: 'errand_accepted',
+      ).catchError((e) {
+        debugPrint('ErrandService: errand_accepted notification error: $e');
+        return false;
+      });
+    }
+
+    return result;
   }
 
   /// Enregistre le refus individuel d'un shoppeur pour une course.
@@ -654,5 +737,15 @@ class ErrandService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+
+    if (_dispatchService != null) {
+      _dispatchService.notify(
+        errandId: errandId,
+        eventType: 'errand_cancelled',
+      ).catchError((e) {
+        debugPrint('ErrandService: errand_cancelled notification error: $e');
+        return false;
+      });
+    }
   }
 }

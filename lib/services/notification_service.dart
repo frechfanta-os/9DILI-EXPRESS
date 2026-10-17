@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
@@ -28,10 +29,37 @@ class ErrandNotificationPayload {
 
   factory ErrandNotificationPayload.fromRemoteMessage(RemoteMessage message) {
     final data = message.data;
+    final eventType = data['eventType'] ?? data['event_type'];
+
+    // Alignement du contrat : dérivation déterministe du statut Firestore depuis eventType si non fourni
+    String? status = data['status'];
+    if (status == null || status.isEmpty) {
+      switch (eventType) {
+        case 'new_errand_available':
+          status = 'pending';
+          break;
+        case 'bid_accepted':
+        case 'errand_accepted':
+        case 'shopper_assigned':
+          status = 'accepted';
+          break;
+        case 'shopper_delivering':
+        case 'shopper_arrived':
+          status = 'delivering';
+          break;
+        case 'errand_completed':
+          status = 'completed';
+          break;
+        case 'errand_cancelled':
+          status = 'cancelled';
+          break;
+      }
+    }
+
     return ErrandNotificationPayload(
       errandId: data['errandId'] ?? data['errand_id'],
-      eventType: data['eventType'] ?? data['event_type'],
-      newStatus: data['status'],
+      eventType: eventType,
+      newStatus: status,
       title: message.notification?.title ?? data['title'],
       body: message.notification?.body ?? data['body'],
     );
@@ -171,8 +199,8 @@ class NotificationService {
         'fcmToken': token,
         'updatedAt': now,
       }, SetOptions(merge: true));
-    } catch (_) {
-      // Les règles de sécurité Firestore encadrent l'écriture à l'utilisateur propriétaire
+    } catch (e, stack) {
+      debugPrint('NotificationService: Erreur enregistrement jeton Firestore: $e\n$stack');
     }
   }
 
@@ -198,8 +226,8 @@ class NotificationService {
         await _firestore.collection('users').doc(uid).update({
           'fcmToken': FieldValue.delete(),
         });
-      } catch (_) {
-        // Ignorer si déjà supprimé ou hors-ligne
+      } catch (e, stack) {
+        debugPrint('NotificationService: Erreur suppression jeton Firestore: $e\n$stack');
       }
     }
 
@@ -207,12 +235,21 @@ class NotificationService {
     _currentToken = null;
   }
 
-  /// Diagnostic complet du sous-système de notification.
+  /// Diagnostic complet du sous-système de notification (lecture neutre sans dialogue système).
   Future<Map<String, dynamic>> getDiagnosticReport() async {
-    final status = await requestPermission();
+    NotificationSettings? settings;
+    try {
+      settings = await _messaging.getNotificationSettings();
+    } catch (e) {
+      debugPrint('NotificationService: getNotificationSettings error: $e');
+    }
+
+    final isAuthorized = settings?.authorizationStatus == AuthorizationStatus.authorized ||
+        settings?.authorizationStatus == AuthorizationStatus.provisional;
+
     return {
-      'permissionStatus': status.name,
-      'isAuthorized': status == AppNotificationPermissionStatus.granted,
+      'permissionStatus': settings?.authorizationStatus.name ?? 'unknown',
+      'isAuthorized': isAuthorized,
       'hasToken': _currentToken != null && _currentToken!.isNotEmpty,
       'maskedToken': maskedToken ?? 'AUCUN_JETON',
       'channelId': errandUpdatesChannelId,
@@ -220,9 +257,11 @@ class NotificationService {
     };
   }
 
-  void dispose() {
-    _tokenRefreshSub?.cancel();
-    _foregroundMessageSub?.cancel();
-    _foregroundPayloadController.close();
+  Future<void> dispose() async {
+    await _tokenRefreshSub?.cancel();
+    _tokenRefreshSub = null;
+    await _foregroundMessageSub?.cancel();
+    _foregroundMessageSub = null;
+    await _foregroundPayloadController.close();
   }
 }
