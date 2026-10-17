@@ -8,7 +8,6 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:dili_express/ui/theme/app_theme.dart';
 
 void main() {
-  const String localDir = '/root/dili_express/screenshots';
   const String artifactDir =
       '/root/.gemini/antigravity-cli/brain/73ce4204-d933-4abd-805b-1d1d6763129e/screenshots';
 
