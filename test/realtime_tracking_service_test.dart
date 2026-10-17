@@ -37,48 +37,57 @@ void main() {
       );
     });
 
-    test('Constante minWriteInterval configurée pour préserver le forfait Spark', () {
-      expect(RealtimeTrackingService.minWriteInterval.inSeconds, equals(8));
-    });
+    test(
+      'Constante minWriteInterval configurée pour préserver le forfait Spark',
+      () {
+        expect(RealtimeTrackingService.minWriteInterval.inSeconds, equals(8));
+      },
+    );
   });
 
   group('ErrandModel & Ticket Verification (Spark sans Storage)', () {
-    test('Un montant seul ne suffit pas à valider le justificatif de caisse', () {
-      const errand = ErrandModel(
-        errandId: 'e1',
-        clientId: 'c1',
-        storeName: 'Supérette Alger',
-        deliveryAddress: 'Hydra',
-        estimatedBudget: 1500,
-        ticketAmount: 1450,
-        ticketRef: null,
-        ticketPhotoUrl: null,
-        securePin: '1234',
-        status: ErrandStatus.shopping,
-      );
+    test(
+      'Un montant seul ne suffit pas à valider le justificatif de caisse',
+      () {
+        const errand = ErrandModel(
+          errandId: 'e1',
+          clientId: 'c1',
+          storeName: 'Supérette Alger',
+          deliveryAddress: 'Hydra',
+          estimatedBudget: 1500,
+          ticketAmount: 1450,
+          ticketRef: null,
+          ticketPhotoUrl: null,
+          securePin: '1234',
+          status: ErrandStatus.shopping,
+        );
 
-      // Règle impérative : Le simple champ ticketAmount n'est PAS une preuve vérifiée
-      expect(errand.isReceiptValidated, isFalse);
-      expect(errand.canTransitionTo(ErrandStatus.delivering), isFalse);
-    });
+        // Règle impérative : Le simple champ ticketAmount n'est PAS une preuve vérifiée
+        expect(errand.isReceiptValidated, isFalse);
+        expect(errand.canTransitionTo(ErrandStatus.delivering), isFalse);
+      },
+    );
 
-    test('Validation réussie avec ticketRef de caisse (>= 3 car) sans Storage', () {
-      const errand = ErrandModel(
-        errandId: 'e1',
-        clientId: 'c1',
-        storeName: 'Supérette Alger',
-        deliveryAddress: 'Hydra',
-        estimatedBudget: 1500,
-        ticketAmount: 1450,
-        ticketRef: 'TCK-2026-08492', // Référence probante
-        ticketPhotoUrl: null,
-        securePin: '1234',
-        status: ErrandStatus.shopping,
-      );
+    test(
+      'Validation réussie avec ticketRef de caisse (>= 3 car) sans Storage',
+      () {
+        const errand = ErrandModel(
+          errandId: 'e1',
+          clientId: 'c1',
+          storeName: 'Supérette Alger',
+          deliveryAddress: 'Hydra',
+          estimatedBudget: 1500,
+          ticketAmount: 1450,
+          ticketRef: 'TCK-2026-08492', // Référence probante
+          ticketPhotoUrl: null,
+          securePin: '1234',
+          status: ErrandStatus.shopping,
+        );
 
-      expect(errand.isReceiptValidated, isTrue);
-      expect(errand.canTransitionTo(ErrandStatus.delivering), isTrue);
-    });
+        expect(errand.isReceiptValidated, isTrue);
+        expect(errand.canTransitionTo(ErrandStatus.delivering), isTrue);
+      },
+    );
 
     test('Validation rétrocompatible réussie avec ticketPhotoUrl', () {
       const errand = ErrandModel(

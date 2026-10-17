@@ -52,7 +52,9 @@ class ProductModel {
 
     // Conversion du code-barres en chaîne nettoyée
     String? rawBarcode = json['barcode']?.toString().trim();
-    if (rawBarcode == null || rawBarcode.isEmpty || rawBarcode.toLowerCase() == 'null') {
+    if (rawBarcode == null ||
+        rawBarcode.isEmpty ||
+        rawBarcode.toLowerCase() == 'null') {
       rawBarcode = null;
     }
 

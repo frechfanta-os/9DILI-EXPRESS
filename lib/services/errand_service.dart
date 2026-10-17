@@ -240,7 +240,8 @@ class ErrandService {
       );
     }
     final hasValidRef = ticketRef != null && ticketRef.trim().length >= 3;
-    final hasValidPhoto = ticketPhotoUrl != null && ticketPhotoUrl.trim().isNotEmpty;
+    final hasValidPhoto =
+        ticketPhotoUrl != null && ticketPhotoUrl.trim().isNotEmpty;
     if (!hasValidRef && !hasValidPhoto) {
       throw ArgumentError(
         "Un justificatif probant (référence de caisse ou photo) est obligatoire.",

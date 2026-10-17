@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:firebase_database/firebase_database.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -12,10 +13,9 @@ class RealtimeTrackingService {
   final FirebaseDatabase? _customDatabase;
 
   RealtimeTrackingService({FirebaseDatabase? database})
-      : _customDatabase = database;
+    : _customDatabase = database;
 
-  FirebaseDatabase get database =>
-      _customDatabase ?? FirebaseDatabase.instance;
+  FirebaseDatabase get database => _customDatabase ?? FirebaseDatabase.instance;
 
   DateTime? _lastGpsWriteTime;
   static const Duration minWriteInterval = Duration(seconds: 8);

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dili_express/services/product_catalog_service.dart';
 
@@ -69,22 +70,28 @@ void main() {
 
       expect(service.isLoaded, isTrue);
       expect(service.productCount, equals(3));
-      expect(service.categories, containsAll(['Fruits & Légumes', 'Épicerie Salée']));
+      expect(
+        service.categories,
+        containsAll(['Fruits & Légumes', 'Épicerie Salée']),
+      );
     });
 
-    test('Recherche insensible à la casse et tolérance aux accents français', () async {
-      await service.loadCatalog(rawJsonString: sampleJson);
+    test(
+      'Recherche insensible à la casse et tolérance aux accents français',
+      () async {
+        await service.loadCatalog(rawJsonString: sampleJson);
 
-      // "pates" sans accent doit trouver "Pâtes Tassili"
-      final results1 = service.search('pates');
-      expect(results1, isNotEmpty);
-      expect(results1.first.nameFr, contains('Pâtes Tassili'));
+        // "pates" sans accent doit trouver "Pâtes Tassili"
+        final results1 = service.search('pates');
+        expect(results1, isNotEmpty);
+        expect(results1.first.nameFr, contains('Pâtes Tassili'));
 
-      // "POMME" en majuscules doit trouver "Pomme de terre"
-      final results2 = service.search('POMME');
-      expect(results2, isNotEmpty);
-      expect(results2.first.skuId, equals('DZ-FRESH-0001'));
-    });
+        // "POMME" en majuscules doit trouver "Pomme de terre"
+        final results2 = service.search('POMME');
+        expect(results2, isNotEmpty);
+        expect(results2.first.skuId, equals('DZ-FRESH-0001'));
+      },
+    );
 
     test('Recherche arabe avec et sans voyelles (Tashkeel)', () async {
       await service.loadCatalog(rawJsonString: sampleJson);
@@ -121,7 +128,10 @@ void main() {
       final fresh = service.getByCategory('Fruits & Légumes');
       expect(fresh.length, equals(2));
 
-      final filteredSearch = service.search('pomme', categoryFilter: 'Fruits & Légumes');
+      final filteredSearch = service.search(
+        'pomme',
+        categoryFilter: 'Fruits & Légumes',
+      );
       expect(filteredSearch.length, equals(1));
     });
 

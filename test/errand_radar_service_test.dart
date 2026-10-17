@@ -55,30 +55,33 @@ void main() {
   });
 
   group('Attribution Exclusive Atomique & Machine d\'État', () {
-    test('Une course pending sans shopperId permet une transition vers accepted', () {
-      final pendingErrand = ErrandModel(
-        errandId: 'errand_assign_01',
-        clientId: 'client_1',
-        storeName: 'Boucherie Hydra',
-        deliveryAddress: 'Hydra, Alger',
-        estimatedBudget: 2500.0,
-        securePin: '9988',
-        status: ErrandStatus.pending,
-        shopperId: null,
-      );
+    test(
+      'Une course pending sans shopperId permet une transition vers accepted',
+      () {
+        final pendingErrand = ErrandModel(
+          errandId: 'errand_assign_01',
+          clientId: 'client_1',
+          storeName: 'Boucherie Hydra',
+          deliveryAddress: 'Hydra, Alger',
+          estimatedBudget: 2500.0,
+          securePin: '9988',
+          status: ErrandStatus.pending,
+          shopperId: null,
+        );
 
-      expect(pendingErrand.isAssigned, isFalse);
-      expect(pendingErrand.canTransitionTo(ErrandStatus.accepted), isTrue);
+        expect(pendingErrand.isAssigned, isFalse);
+        expect(pendingErrand.canTransitionTo(ErrandStatus.accepted), isTrue);
 
-      final acceptedErrand = pendingErrand.copyWith(
-        shopperId: 'shopper_winner_123',
-        status: ErrandStatus.accepted,
-      );
+        final acceptedErrand = pendingErrand.copyWith(
+          shopperId: 'shopper_winner_123',
+          status: ErrandStatus.accepted,
+        );
 
-      expect(acceptedErrand.isAssigned, isTrue);
-      expect(acceptedErrand.shopperId, equals('shopper_winner_123'));
-      expect(acceptedErrand.status, equals(ErrandStatus.accepted));
-    });
+        expect(acceptedErrand.isAssigned, isTrue);
+        expect(acceptedErrand.shopperId, equals('shopper_winner_123'));
+        expect(acceptedErrand.status, equals(ErrandStatus.accepted));
+      },
+    );
 
     test('Tentative de double attribution : Rejet logique d\'un concurrent perdant', () {
       final assignedErrand = ErrandModel(
@@ -95,17 +98,20 @@ void main() {
       // Simulation de la vérification de précondition lors de l'attribution
       final isStillAvailable =
           assignedErrand.status == ErrandStatus.pending &&
-          (assignedErrand.shopperId == null || assignedErrand.shopperId!.isEmpty);
+          (assignedErrand.shopperId == null ||
+              assignedErrand.shopperId!.isEmpty);
 
       expect(isStillAvailable, isFalse);
 
       // Le concurrent perdant doit être rejeté
       final competitorShopperId = 'shopper_loser_456';
-      final isAssignedToCompetitor = assignedErrand.shopperId == competitorShopperId;
+      final isAssignedToCompetitor =
+          assignedErrand.shopperId == competitorShopperId;
       expect(isAssignedToCompetitor, isFalse);
 
       // Le gagnant initial réitérant son appel est idempotent
-      final isAssignedToWinner = assignedErrand.shopperId == 'shopper_winner_123';
+      final isAssignedToWinner =
+          assignedErrand.shopperId == 'shopper_winner_123';
       expect(isAssignedToWinner, isTrue);
     });
 

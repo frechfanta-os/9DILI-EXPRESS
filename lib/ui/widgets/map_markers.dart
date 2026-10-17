@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../theme/app_theme.dart';
 
 /// Marqueurs cartographiques vectoriels et Canvas pour 9DILI EXPRESS.
@@ -214,7 +215,10 @@ class MapMarkerBitmapGenerator {
     int height = 96,
   }) async {
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()));
+    final canvas = Canvas(
+      recorder,
+      Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    );
     final center = Offset(width / 2, height / 2);
 
     // Halo extérieur
@@ -248,7 +252,10 @@ class MapMarkerBitmapGenerator {
     int height = 96,
   }) async {
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()));
+    final canvas = Canvas(
+      recorder,
+      Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()),
+    );
     final center = Offset(width / 2, height / 2);
 
     // Halo extérieur
@@ -278,7 +285,10 @@ class MapMarkerBitmapGenerator {
 
   /// Charge les octets PNG d'un marqueur 3D depuis les assets pour MapLibre SymbolLayer.
   /// Si l'asset est introuvable, bascule sur le générateur Canvas de secours.
-  static Future<Uint8List> loadAssetMarkerBytes(String assetPath, {bool isShopper = true}) async {
+  static Future<Uint8List> loadAssetMarkerBytes(
+    String assetPath, {
+    bool isShopper = true,
+  }) async {
     try {
       final byteData = await rootBundle.load(assetPath);
       return byteData.buffer.asUint8List();
@@ -295,23 +305,34 @@ class MapMarkerAssets {
   static const String basePath = 'assets/images/map_markers/';
 
   // Marqueurs Shopper Orange Vif (différentes vues et véhicules 3D)
-  static const String shopperOrange3D01 = '${basePath}MARQUEURS-MAPLIBRE-3D01.png';
-  static const String shopperOrange3D02 = '${basePath}MARQUEURS-MAPLIBRE-3D02.png';
-  static const String shopperOrange3D03 = '${basePath}MARQUEURS-MAPLIBRE-3D03.png';
-  static const String shopperOrange3D04 = '${basePath}MARQUEURS-MAPLIBRE-3D04.png';
-  static const String shopperOrange3D05 = '${basePath}MARQUEURS-MAPLIBRE-3D05.png';
-  static const String shopperOrange3D07 = '${basePath}MARQUEURS-MAPLIBRE-3D07.png';
-  static const String shopperOrange3D08 = '${basePath}MARQUEURS-MAPLIBRE-3D08.png';
-  static const String shopperOrange3D11 = '${basePath}MARQUEURS-MAPLIBRE-3D11.png';
+  static const String shopperOrange3D01 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D01.png';
+  static const String shopperOrange3D02 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D02.png';
+  static const String shopperOrange3D03 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D03.png';
+  static const String shopperOrange3D04 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D04.png';
+  static const String shopperOrange3D05 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D05.png';
+  static const String shopperOrange3D07 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D07.png';
+  static const String shopperOrange3D08 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D08.png';
+  static const String shopperOrange3D11 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D11.png';
 
   // Marqueurs Vert Validation / Destination Client
   // NOTE DE SÉCURITÉ : Ce marqueur vert symbolise l'emplacement de livraison client,
   // et non la confirmation d'un paiement en espèces ou bancaire.
-  static const String destinationGreen3D06 = '${basePath}MARQUEURS-MAPLIBRE-3D06.png';
-  static const String clientLocationGreen3D10 = '${basePath}MARQUEURS-MAPLIBRE-3D10.png';
+  static const String destinationGreen3D06 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D06.png';
+  static const String clientLocationGreen3D10 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D10.png';
 
   // Marqueur Violet Supérette / Magasin de collecte
-  static const String storeViolet3D09 = '${basePath}MARQUEURS-MAPLIBRE-3D09.png';
+  static const String storeViolet3D09 =
+      '${basePath}MARQUEURS-MAPLIBRE-3D09.png';
 }
 
 /// Marqueur 3D Shopper avec rotation dynamique selon le cap GPS et fallback vectoriel garanti.
@@ -354,10 +375,7 @@ class Shopper3DMarkerWidget extends StatelessWidget {
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) {
                 // Fallback vectoriel transparent en cas d'asset manquant
-                return ShopperMarkerWidget(
-                  heading: heading,
-                  size: size,
-                );
+                return ShopperMarkerWidget(heading: heading, size: size);
               },
             ),
           ),
@@ -461,10 +479,7 @@ class Store3DMarkerWidget extends StatelessWidget {
             height: size * 0.85,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              return StoreMarkerWidget(
-                storeName: storeName,
-                size: size,
-              );
+              return StoreMarkerWidget(storeName: storeName, size: size);
             },
           ),
           const SizedBox(height: 2),

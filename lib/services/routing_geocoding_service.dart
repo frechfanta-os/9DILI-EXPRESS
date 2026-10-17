@@ -5,10 +5,7 @@ class GeoCoordinate {
   final double latitude;
   final double longitude;
 
-  const GeoCoordinate({
-    required this.latitude,
-    required this.longitude,
-  });
+  const GeoCoordinate({required this.latitude, required this.longitude});
 
   @override
   String toString() => 'GeoCoordinate($latitude, $longitude)';
@@ -124,7 +121,8 @@ class FallbackLocalRoutingService implements RoutingService {
     final dLat = (destination.latitude - origin.latitude) * (pi / 180.0);
     final dLon = (destination.longitude - origin.longitude) * (pi / 180.0);
 
-    final a = sin(dLat / 2) * sin(dLat / 2) +
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(origin.latitude * (pi / 180.0)) *
             cos(destination.latitude * (pi / 180.0)) *
             sin(dLon / 2) *

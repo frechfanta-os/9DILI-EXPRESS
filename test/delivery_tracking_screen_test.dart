@@ -102,28 +102,40 @@ void main() {
       expect(find.textContaining('3600.00 DA'), findsOneWidget); // 3200 + 400
     });
 
-    testWidgets('Affichage du bandeau GPS indisponible en vue Shopper sans permission', (tester) async {
-      await tester.binding.setSurfaceSize(const Size(412, 915));
+    testWidgets(
+      'Affichage du bandeau GPS indisponible en vue Shopper sans permission',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(412, 915));
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: DeliveryTrackingScreen(
-            errand: testErrand,
-            errandService: FakeErrandService(testErrand),
-            trackingService: MockRealtimeTrackingService(),
-            mapTrackingService: MockMapTrackingService(permissionGranted: false),
-            isShopperView: true,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: DeliveryTrackingScreen(
+              errand: testErrand,
+              errandService: FakeErrandService(testErrand),
+              trackingService: MockRealtimeTrackingService(),
+              mapTrackingService: MockMapTrackingService(
+                permissionGranted: false,
+              ),
+              isShopperView: true,
+            ),
           ),
-        ),
-      );
+        );
 
-      await tester.pumpAndSettle();
+        await tester.pumpAndSettle();
 
-      expect(find.text('Position GPS indisponible — Veuillez activer la localisation pour diffuser votre trajet.'), findsOneWidget);
-      expect(find.text('Valider le PIN de Remise'), findsOneWidget);
-    });
+        expect(
+          find.text(
+            'Position GPS indisponible — Veuillez activer la localisation pour diffuser votre trajet.',
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Valider le PIN de Remise'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Bascule et affichage du mode hors-ligne / réseau instable', (tester) async {
+    testWidgets('Bascule et affichage du mode hors-ligne / réseau instable', (
+      tester,
+    ) async {
       await tester.binding.setSurfaceSize(const Size(412, 915));
 
       await tester.pumpWidget(
@@ -144,7 +156,12 @@ void main() {
       await tester.tap(find.byTooltip('Synchronisé'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Connexion réseau instable — Données et PIN synchronisés localement.'), findsOneWidget);
+      expect(
+        find.text(
+          'Connexion réseau instable — Données et PIN synchronisés localement.',
+        ),
+        findsOneWidget,
+      );
     });
   });
 }

@@ -87,8 +87,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
     if (ref.length < 3 && (_photoUrl == null || _photoUrl!.isEmpty)) {
       setState(() {
-        _errorMessage =
-            'Veuillez renseigner la référence du ticket (ex: FACT-1042) ou ajouter un aperçu photo.';
+        _errorMessage = 'Veuillez renseigner la référence du ticket (ex: FACT-1042) ou ajouter un aperçu photo.';
       });
       return;
     }
@@ -251,12 +250,19 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       ),
                       child: const Row(
                         children: [
-                          Icon(Icons.handshake_outlined, size: 20, color: AppTheme.violetAccent),
+                          Icon(
+                            Icons.handshake_outlined,
+                            size: 20,
+                            color: AppTheme.violetAccent,
+                          ),
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Remise physique : Le ticket papier original doit être remis en mains propres au client lors de la remise contre validation du PIN.',
-                              style: TextStyle(fontSize: 11, color: AppTheme.textDark),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppTheme.textDark,
+                              ),
                             ),
                           ),
                         ],
@@ -297,7 +303,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                             color: AppTheme.violetSurface,
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: AppTheme.violetAccent.withValues(alpha: 0.5),
+                              color: AppTheme.violetAccent.withValues(
+                                alpha: 0.5,
+                              ),
                               width: 1.5,
                             ),
                           ),

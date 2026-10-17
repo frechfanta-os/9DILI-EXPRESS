@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:flutter/services.dart';
+
 import '../models/product_model.dart';
 
 /// Exception levée lors d'un problème de chargement ou de parsing du catalogue.
@@ -10,7 +12,8 @@ class CatalogLoadException implements Exception {
   CatalogLoadException(this.message, [this.cause]);
 
   @override
-  String toString() => 'CatalogLoadException: $message ${cause != null ? '($cause)' : ''}';
+  String toString() =>
+      'CatalogLoadException: $message ${cause != null ? '($cause)' : ''}';
 }
 
 /// Service de gestion et de recherche du catalogue national algérien (2 200+ produits).
@@ -21,7 +24,8 @@ class CatalogLoadException implements Exception {
 /// - Index O(1) dédié pour les codes-barres (scanners de magasin).
 /// - Zéro dépendance payante, zéro base de données distante.
 class ProductCatalogService {
-  static const String defaultAssetPath = 'assets/data/algeria_full_catalog.json';
+  static const String defaultAssetPath =
+      'assets/data/algeria_full_catalog.json';
 
   List<ProductModel> _products = [];
   final Map<String, ProductModel> _barcodeMap = {};
@@ -87,7 +91,9 @@ class ProductCatalogService {
 
       final dynamic decoded = jsonDecode(jsonContent);
       if (decoded is! List) {
-        throw CatalogLoadException('Format JSON invalide : une liste d\'objets est attendue.');
+        throw CatalogLoadException(
+          'Format JSON invalide : une liste d\'objets est attendue.',
+        );
       }
 
       final List<ProductModel> loadedList = [];
@@ -99,7 +105,8 @@ class ProductCatalogService {
           final product = ProductModel.fromJson(item);
 
           // Déduplication prudente : n'élimine que les clones parfaits (même nom et même code-barres)
-          final uniqueKey = '${product.nameFr.trim().toLowerCase()}_${product.barcode ?? ''}';
+          final uniqueKey =
+              '${product.nameFr.trim().toLowerCase()}_${product.barcode ?? ''}';
           if (seenUniqueKeys.contains(uniqueKey) && product.barcode != null) {
             continue;
           }
@@ -145,7 +152,10 @@ class ProductCatalogService {
       _isLoaded = true;
     } catch (e) {
       _isLoaded = false;
-      throw CatalogLoadException('Impossible de charger le catalogue algérien : $e', e);
+      throw CatalogLoadException(
+        'Impossible de charger le catalogue algérien : $e',
+        e,
+      );
     } finally {
       _isLoading = false;
     }
@@ -177,7 +187,10 @@ class ProductCatalogService {
     }
 
     // 2. Recherche par tokens multi-mots
-    final queryTokens = normalizedQuery.split(' ').where((t) => t.isNotEmpty).toList();
+    final queryTokens = normalizedQuery
+        .split(' ')
+        .where((t) => t.isNotEmpty)
+        .toList();
     final List<ProductModel> results = [];
 
     for (int i = 0; i < _products.length; i++) {

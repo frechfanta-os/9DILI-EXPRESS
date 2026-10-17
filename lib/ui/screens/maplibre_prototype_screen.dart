@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' as maplibre;
 
@@ -8,11 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/map_markers.dart';
 
 /// Statut de cycle de vie du prototype cartographique.
-enum MapLoadState {
-  loading,
-  ready,
-  error,
-}
+enum MapLoadState { loading, ready, error }
 
 /// Écran prototype isolé MapLibre Native pour 9DILI EXPRESS.
 /// Totalement indépendant du flux de livraison de production.
@@ -46,7 +43,7 @@ class MapLibrePrototypeScreen extends StatefulWidget {
 
   /// Builder alternatif pour les tests unitaires/widget tests headless sans NDK.
   final Widget Function(BuildContext context, MapLibrePrototypeState state)?
-      mapBuilder;
+  mapBuilder;
 
   const MapLibrePrototypeScreen({
     super.key,
@@ -121,9 +118,7 @@ class MapLibrePrototypeState extends State<MapLibrePrototypeScreen> {
     setState(() {
       _currentZoom = (_currentZoom + 1.0).clamp(1.0, 20.0);
     });
-    _mapController?.animateCamera(
-      maplibre.CameraUpdate.zoomTo(_currentZoom),
-    );
+    _mapController?.animateCamera(maplibre.CameraUpdate.zoomTo(_currentZoom));
   }
 
   /// Zoom arrière sur la carte.
@@ -131,9 +126,7 @@ class MapLibrePrototypeState extends State<MapLibrePrototypeScreen> {
     setState(() {
       _currentZoom = (_currentZoom - 1.0).clamp(1.0, 20.0);
     });
-    _mapController?.animateCamera(
-      maplibre.CameraUpdate.zoomTo(_currentZoom),
-    );
+    _mapController?.animateCamera(maplibre.CameraUpdate.zoomTo(_currentZoom));
   }
 
   /// Calcule une estimation locale résiliente sans appel réseau externe.
@@ -168,13 +161,11 @@ class MapLibrePrototypeState extends State<MapLibrePrototypeScreen> {
 
     try {
       // Enregistrement des icônes 3D importées depuis assets avec fallback Canvas
-      final shopperBytes =
-          await MapMarkerBitmapGenerator.loadAssetMarkerBytes(
+      final shopperBytes = await MapMarkerBitmapGenerator.loadAssetMarkerBytes(
         MapMarkerAssets.shopperOrange3D01,
         isShopper: true,
       );
-      final destBytes =
-          await MapMarkerBitmapGenerator.loadAssetMarkerBytes(
+      final destBytes = await MapMarkerBitmapGenerator.loadAssetMarkerBytes(
         MapMarkerAssets.destinationGreen3D06,
         isShopper: false,
       );
@@ -234,7 +225,10 @@ class MapLibrePrototypeState extends State<MapLibrePrototypeScreen> {
               onMapCreated: onMapCreated,
               onStyleLoadedCallback: onStyleLoaded,
               myLocationEnabled: false, // Pas d'accès GPS intrusif
-              attributionButtonMargins: const Point(-100, -100), // Géré dans l'UI Stitch
+              attributionButtonMargins: const Point(
+                -100,
+                -100,
+              ), // Géré dans l'UI Stitch
             ),
 
           // 2. Marqueurs personnalisés en superposition interactive
@@ -244,10 +238,7 @@ class MapLibrePrototypeState extends State<MapLibrePrototypeScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Shopper3DMarkerWidget(
-                    heading: 35.0,
-                    size: 56.0,
-                  ),
+                  const Shopper3DMarkerWidget(heading: 35.0, size: 56.0),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -288,10 +279,7 @@ class MapLibrePrototypeState extends State<MapLibrePrototypeScreen> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 20,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -355,8 +343,7 @@ class MapLibrePrototypeState extends State<MapLibrePrototypeScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            _errorMessage ??
-                                'Impossible de récupérer les tuiles OpenFreeMap. Vérifiez votre connexion Internet.',
+                            _errorMessage ?? 'Impossible de récupérer les tuiles OpenFreeMap. Vérifiez votre connexion Internet.',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
                               fontSize: 12,

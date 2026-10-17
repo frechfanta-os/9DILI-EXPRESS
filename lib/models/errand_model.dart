@@ -55,7 +55,8 @@ class ErrandModel {
   final String? ticketRef; // Référence / numéro de ticket de caisse vérifié (Spark sans Storage)
   final String status; // 'pending', 'accepted', 'shopping', 'delivering', 'completed', 'cancelled'
   final String securePin; // Code PIN à 4 chiffres sécurisé
-  final DateTime? pinExpiresAt; // Expiration temporelle du code PIN (ex: 15-30 min)
+  final DateTime?
+  pinExpiresAt; // Expiration temporelle du code PIN (ex: 15-30 min)
   final int pinFailedAttempts; // Protection anti-brute force (max 3 tentatives)
   final bool pinLocked; // Verrouillage après échecs répétés
   final GeoPoint? shopperLocation;

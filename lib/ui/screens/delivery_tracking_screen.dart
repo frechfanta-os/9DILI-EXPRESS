@@ -86,7 +86,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
     if (widget.isShopperView) {
       // 1. Vue Shopper : Demande de permission et streaming matériel GPS
       setState(() => _isLoadingGps = true);
-      final hasPermission = await _mapTrackingService.checkAndRequestPermission();
+      final hasPermission = await _mapTrackingService
+          .checkAndRequestPermission();
 
       if (!hasPermission) {
         if (mounted) {
@@ -137,12 +138,12 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
       _rtdbSubscription = _trackingService
           .streamActiveErrandLocation(widget.errand.errandId)
           .listen((liveCoords) {
-        if (mounted && liveCoords != null) {
-          setState(() {
-            _liveShopperPosition = liveCoords;
+            if (mounted && liveCoords != null) {
+              setState(() {
+                _liveShopperPosition = liveCoords;
+              });
+            }
           });
-        }
-      });
     }
   }
 
@@ -220,7 +221,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
                         ],
                       ),
                       child: QrImageView(
-                        data: '9DILI_DELIVERY:${errand.errandId}:${errand.securePin}',
+                        data:
+                            '9DILI_DELIVERY:${errand.errandId}:${errand.securePin}',
                         version: QrVersions.auto,
                         size: 160.0,
                       ),
@@ -343,8 +345,9 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
 
                               if (result.isSuccess) {
                                 // Nettoyage de l'abonnement et de la position RTDB
-                                await _trackingService
-                                    .cleanUpActiveErrand(errand.errandId);
+                                await _trackingService.cleanUpActiveErrand(
+                                  errand.errandId,
+                                );
                                 await _mapTrackingService.stopTracking();
 
                                 if (!mounted) return;
@@ -419,7 +422,8 @@ class _DeliveryTrackingScreenState extends State<DeliveryTrackingScreen> {
         final errand = snapshot.data ?? widget.errand;
 
         // Position par défaut sur Alger centre si non géolocalisé
-        final shopperPos = _liveShopperPosition ??
+        final shopperPos =
+            _liveShopperPosition ??
             (errand.shopperLocation != null
                 ? LatLng(
                     errand.shopperLocation!.latitude,
