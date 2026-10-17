@@ -23,15 +23,21 @@ void main() {
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final bytes = byteData!.buffer.asUint8List();
 
-    // 1. Sauvegarde dans le repo
-    final f1 = File('$localDir/$subFolder/$fileName');
-    f1.parent.createSync(recursive: true);
-    await f1.writeAsBytes(bytes);
+    // 1. Sauvegarde dans le repo local
+    try {
+      final f1 = File(
+        '${Directory.current.path}/screenshots/$subFolder/$fileName',
+      );
+      f1.parent.createSync(recursive: true);
+      await f1.writeAsBytes(bytes);
+    } catch (_) {}
 
-    // 2. Sauvegarde dans les artefacts pour embedding
-    final f2 = File('$artifactDir/$subFolder/$fileName');
-    f2.parent.createSync(recursive: true);
-    await f2.writeAsBytes(bytes);
+    // 2. Sauvegarde dans les artefacts pour embedding si disponible
+    try {
+      final f2 = File('$artifactDir/$subFolder/$fileName');
+      f2.parent.createSync(recursive: true);
+      await f2.writeAsBytes(bytes);
+    } catch (_) {}
 
     // Capture enregistrée avec succès
   }
