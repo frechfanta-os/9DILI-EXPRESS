@@ -42,6 +42,7 @@ class DefaultFirebaseOptions {
     appId: '1:273784230349:android:1317b52fa41defee973484',
     messagingSenderId: '273784230349',
     projectId: 'dili-express',
+    storageBucket: 'dili-express.firebasestorage.app',
     databaseURL: rtdbUrl,
   );
 

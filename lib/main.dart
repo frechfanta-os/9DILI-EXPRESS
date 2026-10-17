@@ -16,8 +16,20 @@ void main() async {
   // 1. Initialisation obligatoire des liaisons Flutter
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Initialisation de Firebase avec les identifiants officiels dili-express
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // 2. Initialisation cohérente de Firebase (stratégie unique anti-duplicate-app)
+  // Sur Android, le plugin Google Services et FirebaseInitProvider initialisent
+  // nativement l'instance [DEFAULT] au démarrage du processus via google-services.json.
+  // L'utilisation de options: null sur Android rattache le SDK Flutter à l'instance
+  // native sans conflit d'options, tandis que le guard Firebase.apps préserve les hot-restarts.
+  if (Firebase.apps.any((app) => app.name == defaultFirebaseAppName)) {
+    Firebase.app();
+  } else {
+    await Firebase.initializeApp(
+      options: !kIsWeb && defaultTargetPlatform == TargetPlatform.android
+          ? null
+          : DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 
   // 3. Activation progressive de Firebase App Check
   if (!kIsWeb) {

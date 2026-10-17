@@ -1,7 +1,10 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:latlong2/latlong.dart';
+
+import '../firebase_options.dart';
 
 /// Service de suivi GPS temps réel et gestion de présence via Firebase Realtime Database (RTDB).
 /// Conçu pour respecter strictement les quotas gratuits du plan Firebase Spark :
@@ -15,7 +18,14 @@ class RealtimeTrackingService {
   RealtimeTrackingService({FirebaseDatabase? database})
     : _customDatabase = database;
 
-  FirebaseDatabase get database => _customDatabase ?? FirebaseDatabase.instance;
+  FirebaseDatabase get database =>
+      _customDatabase ??
+      (Firebase.apps.isNotEmpty
+          ? FirebaseDatabase.instanceFor(
+              app: Firebase.app(),
+              databaseURL: DefaultFirebaseOptions.rtdbUrl,
+            )
+          : FirebaseDatabase.instance);
 
   DateTime? _lastGpsWriteTime;
   static const Duration minWriteInterval = Duration(seconds: 8);
