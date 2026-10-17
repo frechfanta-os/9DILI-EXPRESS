@@ -107,8 +107,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
 
     if (ref.isEmpty && (_photoUrl == null || _photoUrl!.isEmpty)) {
       setState(() {
-        _errorMessage =
-            'Veuillez renseigner la référence du ticket ou prendre une photo du ticket.';
+        _errorMessage = 'Veuillez renseigner la référence du ticket ou prendre une photo du ticket.';
       });
       return;
     }
@@ -362,12 +361,14 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
-                                  height: 140,
-                                  color: Colors.grey.shade200,
-                                  child: const Center(
-                                    child: Text('Photo du ticket enregistrée'),
-                                  ),
-                                ),
+                                      height: 140,
+                                      color: Colors.grey.shade200,
+                                      child: const Center(
+                                        child: Text(
+                                          'Photo du ticket enregistrée',
+                                        ),
+                                      ),
+                                    ),
                               )
                             : Image.file(
                                 File(_photoUrl!),
@@ -376,12 +377,14 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) =>
                                     Container(
-                                  height: 140,
-                                  color: Colors.grey.shade200,
-                                  child: const Center(
-                                    child: Text('Photo du ticket enregistrée localement'),
-                                  ),
-                                ),
+                                      height: 140,
+                                      color: Colors.grey.shade200,
+                                      child: const Center(
+                                        child: Text(
+                                          'Photo du ticket enregistrée localement',
+                                        ),
+                                      ),
+                                    ),
                               ),
                       ),
                       const SizedBox(height: 8),

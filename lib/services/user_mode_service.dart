@@ -36,14 +36,14 @@ class UserModeService {
   static UserModeService get instance => _singleton;
 
   UserModeService._internal()
-      : _modeNotifier = ValueNotifier<AppMode>(AppMode.client);
+    : _modeNotifier = ValueNotifier<AppMode>(AppMode.client);
 
   /// Constructeur pour injection ou tests unitaires.
   @visibleForTesting
   UserModeService.forTesting({
     SharedPreferences? prefs,
     AppMode initialMode = AppMode.client,
-  })  : _modeNotifier = ValueNotifier<AppMode>(initialMode) {
+  }) : _modeNotifier = ValueNotifier<AppMode>(initialMode) {
     _prefs = prefs;
   }
 
@@ -72,7 +72,8 @@ class UserModeService {
 
     if (saved == 'shopper') {
       // Vérifier les droits du profil si l'utilisateur est déjà connu
-      if (initialUser != null && !checkShopperPrerequisites(initialUser).isEligible) {
+      if (initialUser != null &&
+          !checkShopperPrerequisites(initialUser).isEligible) {
         _modeNotifier.value = AppMode.client;
         await _prefs?.setString(prefKey, 'client');
       } else {
@@ -127,7 +128,8 @@ class UserModeService {
   /// 3. Moyen de transport configuré.
   ShopperPrerequisitesResult checkShopperPrerequisites(UserModel user) {
     final hasFullName =
-        user.fullName.trim().isNotEmpty && user.fullName.trim() != 'Utilisateur';
+        user.fullName.trim().isNotEmpty &&
+        user.fullName.trim() != 'Utilisateur';
     final hasValidPhone = user.hasValidPhone;
     final hasTransport = user.transportType.trim().isNotEmpty;
 

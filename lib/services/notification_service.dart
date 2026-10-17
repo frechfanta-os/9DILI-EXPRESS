@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -80,8 +81,8 @@ class NotificationService {
   NotificationService({
     FirebaseMessaging? messaging,
     FirebaseFirestore? firestore,
-  })  : _customMessaging = messaging,
-        _customFirestore = firestore;
+  }) : _customMessaging = messaging,
+       _customFirestore = firestore;
 
   FirebaseMessaging get _messaging =>
       _customMessaging ?? FirebaseMessaging.instance;
@@ -188,11 +189,11 @@ class NotificationService {
           .collection('fcm_tokens')
           .doc(token)
           .set({
-        'token': token,
-        'platform': 'android',
-        'updatedAt': now,
-        'createdAt': now,
-      }, SetOptions(merge: true));
+            'token': token,
+            'platform': 'android',
+            'updatedAt': now,
+            'createdAt': now,
+          }, SetOptions(merge: true));
 
       // Mise à jour du champ racine fcmToken pour compatibilité backend direct
       await _firestore.collection('users').doc(userId).set({
@@ -200,7 +201,9 @@ class NotificationService {
         'updatedAt': now,
       }, SetOptions(merge: true));
     } catch (e, stack) {
-      debugPrint('NotificationService: Erreur enregistrement jeton Firestore: $e\n$stack');
+      debugPrint(
+        'NotificationService: Erreur enregistrement jeton Firestore: $e\n$stack',
+      );
     }
   }
 
@@ -227,7 +230,9 @@ class NotificationService {
           'fcmToken': FieldValue.delete(),
         });
       } catch (e, stack) {
-        debugPrint('NotificationService: Erreur suppression jeton Firestore: $e\n$stack');
+        debugPrint(
+          'NotificationService: Erreur suppression jeton Firestore: $e\n$stack',
+        );
       }
     }
 
@@ -244,7 +249,8 @@ class NotificationService {
       debugPrint('NotificationService: getNotificationSettings error: $e');
     }
 
-    final isAuthorized = settings?.authorizationStatus == AuthorizationStatus.authorized ||
+    final isAuthorized =
+        settings?.authorizationStatus == AuthorizationStatus.authorized ||
         settings?.authorizationStatus == AuthorizationStatus.provisional;
 
     return {

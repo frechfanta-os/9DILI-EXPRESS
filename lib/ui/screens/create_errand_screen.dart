@@ -64,12 +64,11 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     _catalogService = widget.catalogService ?? ProductCatalogService.instance;
     _isLoading = !_catalogService.isLoaded;
     _deliveryGeoPoint = widget.initialGeoPoint;
-    _storeCtrl = TextEditingController(
-      text: widget.initialStoreName ?? '',
-    );
+    _storeCtrl = TextEditingController(text: widget.initialStoreName ?? '');
     if (widget.initialGeoPoint != null) {
       _addressCtrl = TextEditingController(
-        text: 'Position GPS certifiée (${widget.initialGeoPoint!.latitude.toStringAsFixed(5)}, ${widget.initialGeoPoint!.longitude.toStringAsFixed(5)})',
+        text:
+            'Position GPS certifiée (${widget.initialGeoPoint!.latitude.toStringAsFixed(5)}, ${widget.initialGeoPoint!.longitude.toStringAsFixed(5)})',
       );
     } else if (widget.initialAddress != null &&
         widget.initialAddress!.isNotEmpty &&
@@ -157,8 +156,7 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage =
-              'Impossible de charger le catalogue de produits : $e';
+          _errorMessage = 'Impossible de charger le catalogue de produits : $e';
         });
       }
     }
@@ -173,21 +171,6 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       total += count;
     }
     return total;
-  }
-
-  double get _estimatedTotalBudget {
-    double sum = 0.0;
-    for (final entry in _cart.entries) {
-      final p = entry.key;
-      final qty = entry.value;
-      final unitPrice = p.estimatedPriceDzd ?? 150.0;
-      sum += (unitPrice * qty);
-    }
-    for (final custom in _customItems) {
-      final unitPrice = custom.estimatedPrice ?? 200.0;
-      sum += (custom.quantity * unitPrice);
-    }
-    return sum;
   }
 
   void _addToCart(ProductModel product) {
@@ -256,10 +239,7 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                   SizedBox(width: 10),
                   Text(
                     'Photographier un produit 📷',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -276,7 +256,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     color: AppTheme.violetSurface,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.camera_alt, color: AppTheme.violetAccent),
+                  child: const Icon(
+                    Icons.camera_alt,
+                    color: AppTheme.violetAccent,
+                  ),
                 ),
                 title: const Text('Prendre une photo'),
                 subtitle: const Text('Ouvrir l\'appareil photo'),
@@ -292,7 +275,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     color: AppTheme.violetSurface,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.photo_library, color: AppTheme.violetAccent),
+                  child: const Icon(
+                    Icons.photo_library,
+                    color: AppTheme.violetAccent,
+                  ),
                 ),
                 title: const Text('Choisir depuis la galerie'),
                 subtitle: const Text('Sélecteur d\'images Android'),
@@ -363,7 +349,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Row(
             children: [
               Icon(Icons.camera_alt, color: AppTheme.primaryOrange),
@@ -410,7 +398,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         }
                       },
                       icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text('Changer de photo', style: TextStyle(fontSize: 12)),
+                      label: const Text(
+                        'Changer de photo',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                   ],
                 ),
@@ -431,7 +422,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       child: TextField(
                         controller: qtyCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Quantité *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Quantité *',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -441,12 +434,30 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         initialValue: unit,
                         decoration: const InputDecoration(labelText: 'Unité'),
                         items: const [
-                          DropdownMenuItem(value: ErrandItemUnit.piece, child: Text('x (Pièce)')),
-                          DropdownMenuItem(value: ErrandItemUnit.kilogram, child: Text('kg (Poids)')),
-                          DropdownMenuItem(value: 'g', child: Text('g (Grammes)')),
-                          DropdownMenuItem(value: ErrandItemUnit.liter, child: Text('L (Volume)')),
-                          DropdownMenuItem(value: 'mL', child: Text('mL (Volume)')),
-                          DropdownMenuItem(value: ErrandItemUnit.pack, child: Text('Pack')),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.piece,
+                            child: Text('x (Pièce)'),
+                          ),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.kilogram,
+                            child: Text('kg (Poids)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'g',
+                            child: Text('g (Grammes)'),
+                          ),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.liter,
+                            child: Text('L (Volume)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'mL',
+                            child: Text('mL (Volume)'),
+                          ),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.pack,
+                            child: Text('Pack'),
+                          ),
                         ],
                         onChanged: (val) {
                           if (val != null) setDialogState(() => unit = val);
@@ -530,7 +541,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Row(
             children: [
               Icon(Icons.edit_note, color: AppTheme.primaryOrange),
@@ -564,7 +577,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       child: TextField(
                         controller: qtyCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Quantité *'),
+                        decoration: const InputDecoration(
+                          labelText: 'Quantité *',
+                        ),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -574,12 +589,30 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         initialValue: unit,
                         decoration: const InputDecoration(labelText: 'Unité'),
                         items: const [
-                          DropdownMenuItem(value: ErrandItemUnit.piece, child: Text('x (Pièce)')),
-                          DropdownMenuItem(value: ErrandItemUnit.kilogram, child: Text('kg (Poids)')),
-                          DropdownMenuItem(value: 'g', child: Text('g (Grammes)')),
-                          DropdownMenuItem(value: ErrandItemUnit.liter, child: Text('L (Volume)')),
-                          DropdownMenuItem(value: 'mL', child: Text('mL (Volume)')),
-                          DropdownMenuItem(value: ErrandItemUnit.pack, child: Text('Pack')),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.piece,
+                            child: Text('x (Pièce)'),
+                          ),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.kilogram,
+                            child: Text('kg (Poids)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'g',
+                            child: Text('g (Grammes)'),
+                          ),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.liter,
+                            child: Text('L (Volume)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'mL',
+                            child: Text('mL (Volume)'),
+                          ),
+                          DropdownMenuItem(
+                            value: ErrandItemUnit.pack,
+                            child: Text('Pack'),
+                          ),
                         ],
                         onChanged: (val) {
                           if (val != null) setDialogState(() => unit = val);
@@ -699,7 +732,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               backgroundColor: AppTheme.errorRed,
-              content: Text('Veuillez activer la localisation GPS sur votre appareil.'),
+              content: Text(
+                'Veuillez activer la localisation GPS sur votre appareil.',
+              ),
             ),
           );
         }
@@ -761,7 +796,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
     }
   }
 
-  Future<void> _pickPointOnMap(BuildContext ctx, StateSetter setSheetState) async {
+  Future<void> _pickPointOnMap(
+    BuildContext ctx,
+    StateSetter setSheetState,
+  ) async {
     LatLng selected = _deliveryGeoPoint != null
         ? LatLng(_deliveryGeoPoint!.latitude, _deliveryGeoPoint!.longitude)
         : const LatLng(36.7538, 3.0588);
@@ -771,8 +809,13 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       builder: (dialogCtx) => StatefulBuilder(
         builder: (innerCtx, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Pointer l\'adresse de livraison 📍', style: TextStyle(fontSize: 16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Pointer l\'adresse de livraison 📍',
+              style: TextStyle(fontSize: 16),
+            ),
             content: SizedBox(
               width: double.maxFinite,
               height: 350,
@@ -814,7 +857,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                 child: const Text('Annuler'),
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentGreen),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentGreen,
+                ),
                 onPressed: () => Navigator.pop(dialogCtx, selected),
                 child: const Text('Confirmer ce point 📍'),
               ),
@@ -968,7 +1013,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         ),
                         color: AppTheme.violetSurface,
                         child: ListTile(
-                          leading: custom.photoUrl != null &&
+                          leading:
+                              custom.photoUrl != null &&
                                   custom.photoUrl!.isNotEmpty
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
@@ -978,16 +1024,20 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                                           width: 44,
                                           height: 44,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) =>
-                                              const Icon(Icons.broken_image, size: 28),
+                                          errorBuilder: (_, _, _) => const Icon(
+                                            Icons.broken_image,
+                                            size: 28,
+                                          ),
                                         )
                                       : Image.file(
                                           File(custom.photoUrl!),
                                           width: 44,
                                           height: 44,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) =>
-                                              const Icon(Icons.broken_image, size: 28),
+                                          errorBuilder: (_, _, _) => const Icon(
+                                            Icons.broken_image,
+                                            size: 28,
+                                          ),
                                         ),
                                 )
                               : Container(
@@ -1007,7 +1057,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                               Expanded(
                                 child: Text(
                                   custom.name,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               Container(
@@ -1016,7 +1068,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                                  color: AppTheme.primaryOrange.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Text(
@@ -1041,12 +1095,17 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                                 icon: const Icon(Icons.remove_circle_outline),
                                 color: AppTheme.textMuted,
                                 onPressed: () {
-                                  _updateCustomItemQty(custom, custom.quantity - 1);
+                                  _updateCustomItemQty(
+                                    custom,
+                                    custom.quantity - 1,
+                                  );
                                   setSheetState(() {});
                                 },
                               ),
                               Text(
-                                custom.quantity.toStringAsFixed(custom.quantity % 1 == 0 ? 0 : 1),
+                                custom.quantity.toStringAsFixed(
+                                  custom.quantity % 1 == 0 ? 0 : 1,
+                                ),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
@@ -1056,7 +1115,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                                 icon: const Icon(Icons.add_circle_outline),
                                 color: AppTheme.primaryOrange,
                                 onPressed: () {
-                                  _updateCustomItemQty(custom, custom.quantity + 1);
+                                  _updateCustomItemQty(
+                                    custom,
+                                    custom.quantity + 1,
+                                  );
                                   setSheetState(() {});
                                 },
                               ),
@@ -1092,8 +1154,12 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       readOnly: true,
                       decoration: const InputDecoration(
                         labelText: 'Adresse de livraison certifiée par GPS *',
-                        prefixIcon: Icon(Icons.verified_user, color: AppTheme.accentGreen),
-                        helperText: 'Position verrouillée par GPS contre la fraude',
+                        prefixIcon: Icon(
+                          Icons.verified_user,
+                          color: AppTheme.accentGreen,
+                        ),
+                        helperText:
+                            'Position verrouillée par GPS contre la fraude',
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -1108,8 +1174,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: _deliveryGeoPoint != null
-                            ? AppTheme.accentGreen.withValues(alpha: 0.4)
-                            : AppTheme.warningOrange.withValues(alpha: 0.4),
+                              ? AppTheme.accentGreen.withValues(alpha: 0.4)
+                              : AppTheme.warningOrange.withValues(alpha: 0.4),
                         ),
                       ),
                       child: Column(
@@ -1160,7 +1226,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
                                   ),
                                   onPressed: _isFetchingGps
                                       ? null
@@ -1169,7 +1237,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                                       ? const SizedBox(
                                           width: 14,
                                           height: 14,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
                                         )
                                       : const Icon(Icons.my_location, size: 16),
                                   label: const Text(
@@ -1182,7 +1252,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                               Expanded(
                                 child: OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
                                   ),
                                   onPressed: () =>
                                       _pickPointOnMap(sheetCtx, setSheetState),
@@ -1205,7 +1277,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       controller: ceilingBudgetCtrl,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Plafond de budget des achats (DA, Facultatif)',
+                        labelText:
+                            'Plafond de budget des achats (DA, Facultatif)',
                         hintText: 'Ex: 3000 (Approximatif ou exact)',
                         helperText: 'Fixez un plafond maximum indicatif pour votre commande',
                         prefixIcon: Icon(Icons.account_balance_wallet_outlined),
@@ -1222,7 +1295,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.security, color: AppTheme.violetAccent),
+                          const Icon(
+                            Icons.security,
+                            color: AppTheme.violetAccent,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -1252,7 +1328,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         String address = _addressCtrl.text.trim();
 
                         if (_deliveryGeoPoint != null &&
-                            (address.isEmpty || address.contains('détection'))) {
+                            (address.isEmpty ||
+                                address.contains('détection'))) {
                           address =
                               'Position GPS certifiée (${_deliveryGeoPoint!.latitude.toStringAsFixed(5)}, ${_deliveryGeoPoint!.longitude.toStringAsFixed(5)})';
                           _addressCtrl.text = address;
@@ -1262,7 +1339,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               backgroundColor: AppTheme.errorRed,
-                              content: Text('Veuillez renseigner votre adresse de livraison.'),
+                              content: Text(
+                                'Veuillez renseigner votre adresse de livraison.',
+                              ),
                             ),
                           );
                           return;
@@ -1281,7 +1360,8 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                         }
 
                         final budget =
-                            double.tryParse(ceilingBudgetCtrl.text.trim()) ?? 0.0;
+                            double.tryParse(ceilingBudgetCtrl.text.trim()) ??
+                            0.0;
 
                         // Conversion des articles du panier
                         final items = <ErrandItemModel>[];
@@ -1294,7 +1374,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                               name: p.displayName,
                               quantity: qty.toDouble(),
                               unit: p.isWeighable ? 'kg' : (p.unitType ?? 'x'),
-                              notes: p.brand != null ? 'Marque : ${p.brand}' : '',
+                              notes: p.brand != null
+                                  ? 'Marque : ${p.brand}'
+                                  : '',
                             ),
                           );
                         }
@@ -1383,7 +1465,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                       color: AppTheme.errorRed,
                       shape: BoxShape.circle,
                     ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
                     child: Text(
                       '$_totalCartCount',
                       textAlign: TextAlign.center,
@@ -1403,7 +1488,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
       bottomNavigationBar: _totalCartCount > 0
           ? SafeArea(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -1488,7 +1576,11 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 54, color: AppTheme.errorRed),
+              const Icon(
+                Icons.error_outline,
+                size: 54,
+                color: AppTheme.errorRed,
+              ),
               const SizedBox(height: 12),
               Text(
                 _errorMessage!,
@@ -1523,7 +1615,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
             controller: _searchCtrl,
             decoration: InputDecoration(
               hintText: 'Rechercher (ex: batata, lait, maqrouna, 613...)',
-              prefixIcon: const Icon(Icons.search, color: AppTheme.primaryOrange),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: AppTheme.primaryOrange,
+              ),
               suffixIcon: query.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear),
@@ -1616,7 +1711,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
           child: products.isEmpty
               ? _buildEmptyState()
               : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   itemCount: products.length,
                   separatorBuilder: (_, index) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
@@ -1647,7 +1745,9 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
               selected: _selectedCategory == null,
               selectedColor: AppTheme.primaryOrange,
               labelStyle: TextStyle(
-                color: _selectedCategory == null ? Colors.white : AppTheme.textDark,
+                color: _selectedCategory == null
+                    ? Colors.white
+                    : AppTheme.textDark,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -1803,14 +1903,20 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     color: AppTheme.errorRed,
                     tooltip: 'Désélectionner',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
                     onPressed: () => _removeEntirelyFromCart(product),
                   ),
                   IconButton(
                     icon: const Icon(Icons.remove, size: 18),
                     color: AppTheme.textMuted,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
                     onPressed: () => _removeFromCart(product),
                   ),
                   Container(
@@ -1835,7 +1941,10 @@ class _CreateErrandScreenState extends State<CreateErrandScreen> {
                     icon: const Icon(Icons.add, size: 18),
                     color: AppTheme.primaryOrange,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
                     onPressed: () => _addToCart(product),
                   ),
                 ],

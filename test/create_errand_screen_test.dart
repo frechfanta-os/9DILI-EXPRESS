@@ -117,31 +117,41 @@ void main() {
   }
 
   group('CreateErrandScreen — Catalogue, Rayons & Panier (Tests Widget)', () {
-    testWidgets('1. Affichage des rayons et de la liste de produits après chargement', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildTestScreen());
-      await tester.pumpAndSettle();
+    testWidgets(
+      '1. Affichage des rayons et de la liste de produits après chargement',
+      (tester) async {
+        await tester.pumpWidget(buildTestScreen());
+        await tester.pumpAndSettle();
 
-      // Vérification des en-têtes
-      expect(find.text('Commander mes courses 🛒'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Tous les rayons'), findsOneWidget);
+        // Vérification des en-têtes
+        expect(find.text('Commander mes courses 🛒'), findsOneWidget);
+        expect(
+          find.widgetWithText(ChoiceChip, 'Tous les rayons'),
+          findsOneWidget,
+        );
 
-      // Vérification des catégories / rayons
-      expect(find.widgetWithText(ChoiceChip, 'Fruits & Légumes'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Boissons'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Épicerie Salée'), findsOneWidget);
+        // Vérification des catégories / rayons
+        expect(
+          find.widgetWithText(ChoiceChip, 'Fruits & Légumes'),
+          findsOneWidget,
+        );
+        expect(find.widgetWithText(ChoiceChip, 'Boissons'), findsOneWidget);
+        expect(
+          find.widgetWithText(ChoiceChip, 'Épicerie Salée'),
+          findsOneWidget,
+        );
 
-      // Vérification des cartes produits affichées
-      expect(find.text('Pomme de terre blanche (Batata)'), findsOneWidget);
-      expect(find.text('Hamoud Boualem Selecto 1L'), findsOneWidget);
-      expect(find.text('Pâtes Tassili Coquillettes 500g'), findsOneWidget);
+        // Vérification des cartes produits affichées
+        expect(find.text('Pomme de terre blanche (Batata)'), findsOneWidget);
+        expect(find.text('Hamoud Boualem Selecto 1L'), findsOneWidget);
+        expect(find.text('Pâtes Tassili Coquillettes 500g'), findsOneWidget);
 
-      // Vérification des prix et badges
-      expect(find.text('85 DA'), findsOneWidget);
-      expect(find.text('110 DA'), findsOneWidget);
-      expect(find.text('75 DA'), findsOneWidget);
-    });
+        // Vérification des prix et badges
+        expect(find.text('85 DA'), findsOneWidget);
+        expect(find.text('110 DA'), findsOneWidget);
+        expect(find.text('75 DA'), findsOneWidget);
+      },
+    );
 
     testWidgets('2. Filtrage des produits par sélection d\'un rayon', (
       tester,
@@ -185,74 +195,85 @@ void main() {
       expect(find.text('Hamoud Boualem Selecto 1L'), findsNothing);
     });
 
-    testWidgets('4. Ajout au panier et préservation lors du changement de rayon', (
-      tester,
-    ) async {
-      await tester.pumpWidget(buildTestScreen());
-      await tester.pumpAndSettle();
+    testWidgets(
+      '4. Ajout au panier et préservation lors du changement de rayon',
+      (tester) async {
+        await tester.pumpWidget(buildTestScreen());
+        await tester.pumpAndSettle();
 
-      // Panier initialement vide (pas de barre en bas)
-      expect(find.text('Voir mon panier'), findsNothing);
+        // Panier initialement vide (pas de barre en bas)
+        expect(find.text('Voir mon panier'), findsNothing);
 
-      // Ajout du premier produit (Pomme de terre)
-      final addButtons = find.byIcon(Icons.add);
-      expect(addButtons, findsWidgets);
-      await tester.tap(addButtons.first);
-      await tester.pumpAndSettle();
+        // Ajout du premier produit (Pomme de terre)
+        final addButtons = find.byIcon(Icons.add);
+        expect(addButtons, findsWidgets);
+        await tester.tap(addButtons.first);
+        await tester.pumpAndSettle();
 
-      // La barre panier doit apparaître avec 1 article
-      expect(find.text('1 article au panier'), findsOneWidget);
-      expect(find.text('Voir mon panier'), findsOneWidget);
+        // La barre panier doit apparaître avec 1 article
+        expect(find.text('1 article au panier'), findsOneWidget);
+        expect(find.text('Voir mon panier'), findsOneWidget);
 
-      // Changement de rayon vers « Boissons »
-      await tester.tap(find.widgetWithText(ChoiceChip, 'Boissons'));
-      await tester.pumpAndSettle();
+        // Changement de rayon vers « Boissons »
+        await tester.tap(find.widgetWithText(ChoiceChip, 'Boissons'));
+        await tester.pumpAndSettle();
 
-      // Le panier doit être préservé malgré le changement de filtre/rayon
-      expect(find.text('1 article au panier'), findsOneWidget);
+        // Le panier doit être préservé malgré le changement de filtre/rayon
+        expect(find.text('1 article au panier'), findsOneWidget);
 
-      // Ajout d'une bouteille de Selecto
-      await tester.tap(find.byIcon(Icons.add).first);
-      await tester.pumpAndSettle();
+        // Ajout d'une bouteille de Selecto
+        await tester.tap(find.byIcon(Icons.add).first);
+        await tester.pumpAndSettle();
 
-      // Le panier contient maintenant 2 articles
-      expect(find.text('2 articles au panier'), findsOneWidget);
-    });
+        // Le panier contient maintenant 2 articles
+        expect(find.text('2 articles au panier'), findsOneWidget);
+      },
+    );
 
-    testWidgets('5. Test de régression : le catalogue réel ne reste jamais vide', (
-      tester,
-    ) async {
-      // Test avec le catalogue officiel national de 2 261 produits
-      final realFile = File('assets/data/algeria_lsl_flat.json');
-      expect(realFile.existsSync(), isTrue);
+    testWidgets(
+      '5. Test de régression : le catalogue réel ne reste jamais vide',
+      (tester) async {
+        // Test avec le catalogue officiel national de 2 261 produits
+        final realFile = File('assets/data/algeria_lsl_flat.json');
+        expect(realFile.existsSync(), isTrue);
 
-      final fullCatalogService = ProductCatalogService();
-      final fullContent = realFile.readAsStringSync();
-      await fullCatalogService.loadCatalog(rawJsonString: fullContent);
+        final fullCatalogService = ProductCatalogService();
+        final fullContent = realFile.readAsStringSync();
+        await fullCatalogService.loadCatalog(rawJsonString: fullContent);
 
-      expect(fullCatalogService.productCount, greaterThan(2200));
-      expect(fullCatalogService.categories.length, greaterThanOrEqualTo(9));
+        expect(fullCatalogService.productCount, greaterThan(2200));
+        expect(fullCatalogService.categories.length, greaterThanOrEqualTo(9));
 
-      final testWidget = MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: CreateErrandScreen(
-          clientId: 'client_real_789',
-          errandService: errandService,
-          catalogService: fullCatalogService,
-        ),
-      );
+        final testWidget = MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: CreateErrandScreen(
+            clientId: 'client_real_789',
+            errandService: errandService,
+            catalogService: fullCatalogService,
+          ),
+        );
 
-      await tester.pumpWidget(testWidget);
-      await tester.pump();
+        await tester.pumpWidget(testWidget);
+        await tester.pump();
 
-      // Les rayons réels doivent être rendus
-      expect(find.widgetWithText(ChoiceChip, 'Tous les rayons'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Marché Frais & Souk'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Boissons & Cave à Eaux'), findsOneWidget);
+        // Les rayons réels doivent être rendus
+        expect(
+          find.widgetWithText(ChoiceChip, 'Tous les rayons'),
+          findsOneWidget,
+        );
+        expect(
+          find.widgetWithText(ChoiceChip, 'Marché Frais & Souk'),
+          findsOneWidget,
+        );
+        expect(
+          find.widgetWithText(ChoiceChip, 'Boissons & Cave à Eaux'),
+          findsOneWidget,
+        );
 
-      // Des cartes produits réelles doivent être affichées immédiatement
-      expect(find.byType(Card), findsWidgets);
-      expect(find.text('Aucun article trouvé dans ce rayon'), findsNothing);
-    });
+        // Des cartes produits réelles doivent être affichées immédiatement
+        expect(find.byType(Card), findsWidgets);
+        expect(find.text('Aucun article trouvé dans ce rayon'), findsNothing);
+      },
+    );
   });
 }

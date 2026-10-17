@@ -97,7 +97,10 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
         setState(() {
           _gpsError = 'Service de localisation désactivé sur le téléphone.';
           _isLoadingGps = false;
-          _clientPosition = const LatLng(36.7538, 3.0588); // Alger centre fallback
+          _clientPosition = const LatLng(
+            36.7538,
+            3.0588,
+          ); // Alger centre fallback
         });
         return;
       }
@@ -154,17 +157,16 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
       }
     });
 
-    _waveTimer = Timer.periodic(
-      const Duration(seconds: waveIntervalSeconds),
-      (timer) {
-        if (!mounted) return;
-        if (_currentWaveIndex < progressiveWaves.length - 1) {
-          setState(() {
-            _currentWaveIndex++;
-          });
-        }
-      },
-    );
+    _waveTimer = Timer.periodic(const Duration(seconds: waveIntervalSeconds), (
+      timer,
+    ) {
+      if (!mounted) return;
+      if (_currentWaveIndex < progressiveWaves.length - 1) {
+        setState(() {
+          _currentWaveIndex++;
+        });
+      }
+    });
   }
 
   void _resetRadarWaves() {
@@ -206,8 +208,10 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
 
   bool _isShopperFresh(UserModel shopper) {
     if (shopper.updatedAt == null) return true;
-    final diffSeconds =
-        DateTime.now().difference(shopper.updatedAt!).inSeconds.abs();
+    final diffSeconds = DateTime.now()
+        .difference(shopper.updatedAt!)
+        .inSeconds
+        .abs();
     return diffSeconds <= 120;
   }
 
@@ -315,7 +319,8 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: AppTheme.accentGreen.withValues(
-                                      alpha: (1.0 - _pulseController.value) * 0.4,
+                                      alpha:
+                                          (1.0 - _pulseController.value) * 0.4,
                                     ),
                                   ),
                                 ),
@@ -353,8 +358,7 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
                       // Marqueurs Shoppers
                       ...displayedShoppers.map((entry) {
                         final shopper = entry.key;
-                        final isSelected =
-                            _selectedShopper?.uid == shopper.uid;
+                        final isSelected = _selectedShopper?.uid == shopper.uid;
                         final pos = LatLng(
                           shopper.location!.latitude,
                           shopper.location!.longitude,
@@ -446,11 +450,13 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
                                       _isLoadingGps
                                           ? 'Acquisition du signal GPS...'
                                           : displayedShoppers.isEmpty
-                                              ? 'Recherche en cours... (Prochaine vague : ${_secondsUntilNextWave}s)'
-                                              : '${displayedShoppers.length} shoppeur(s) détecté(s) <= 120s',
+                                          ? 'Recherche en cours... (Prochaine vague : ${_secondsUntilNextWave}s)'
+                                          : '${displayedShoppers.length} shoppeur(s) détecté(s) <= 120s',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: _isLoadingGps || displayedShoppers.isEmpty
+                                        color:
+                                            _isLoadingGps ||
+                                                displayedShoppers.isEmpty
                                             ? AppTheme.warningOrange
                                             : AppTheme.accentGreen,
                                         fontWeight: FontWeight.w600,
@@ -472,8 +478,7 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
                                 onPressed: () {
                                   setState(() {
                                     _currentWaveIndex++;
-                                    _secondsUntilNextWave =
-                                        waveIntervalSeconds;
+                                    _secondsUntilNextWave = waveIntervalSeconds;
                                   });
                                 },
                                 icon: const Icon(Icons.zoom_out_map, size: 14),
@@ -619,7 +624,11 @@ class _ClientRadarScreenState extends State<ClientRadarScreen>
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 14),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 14,
+                            ),
                             Text(
                               ' ${activeShopper.rating.toStringAsFixed(1)} • ${activeShopper.transport.labelFr}',
                               style: const TextStyle(

@@ -24,7 +24,9 @@ class MockErrandServiceForTests extends ErrandService {
     if (simulateNetworkError) {
       throw const SocketException("Erreur de connexion réseau");
     }
-    final id = errand.errandId.isNotEmpty ? errand.errandId : 'mock_errand_${mockErrands.length + 1}';
+    final id = errand.errandId.isNotEmpty
+        ? errand.errandId
+        : 'mock_errand_${mockErrands.length + 1}';
     final saved = errand.copyWith(errandId: id);
     mockErrands[id] = saved;
     if (items != null) {
@@ -46,7 +48,9 @@ class MockErrandServiceForTests extends ErrandService {
   @override
   Stream<List<ErrandModel>> streamPendingErrands({double? maxBudget}) {
     return Stream.value(
-      mockErrands.values.where((e) => e.status == ErrandStatus.pending).toList(),
+      mockErrands.values
+          .where((e) => e.status == ErrandStatus.pending)
+          .toList(),
     );
   }
 
@@ -76,15 +80,16 @@ class MockErrandServiceForTests extends ErrandService {
         "cannot_cancel_completed: Impossible d'annuler une course déjà terminée.",
       );
     }
-    if (!ErrandStatus.isValidTransition(errand.status, ErrandStatus.cancelled)) {
+    if (!ErrandStatus.isValidTransition(
+      errand.status,
+      ErrandStatus.cancelled,
+    )) {
       throw StateError(
         "invalid_transition: Impossible d'annuler la course au statut '${errand.status}'.",
       );
     }
 
-    mockErrands[errandId] = errand.copyWith(
-      status: ErrandStatus.cancelled,
-    );
+    mockErrands[errandId] = errand.copyWith(status: ErrandStatus.cancelled);
   }
 }
 
@@ -152,151 +157,172 @@ void main() {
   }
 
   group('UX CATALOGUE, PANIER & PRODUITS PERSONNALISÉS', () {
-    testWidgets('1. La barre de recherche reste fixe au-dessus des rayons et des produits', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      '1. La barre de recherche reste fixe au-dessus des rayons et des produits',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Vérification que la barre de recherche est affichée
-      final searchField = find.byType(TextField).first;
-      expect(searchField, findsOneWidget);
+        // Vérification que la barre de recherche est affichée
+        final searchField = find.byType(TextField).first;
+        expect(searchField, findsOneWidget);
 
-      // Vérification que les boutons d'actions personnalisées sont visibles
-      expect(find.text('📷 Photographier'), findsOneWidget);
-      expect(find.text('+ Produit personnalisé'), findsOneWidget);
+        // Vérification que les boutons d'actions personnalisées sont visibles
+        expect(find.text('📷 Photographier'), findsOneWidget);
+        expect(find.text('+ Produit personnalisé'), findsOneWidget);
 
-      // Vérification du défilement horizontal des rayons
-      expect(find.widgetWithText(ChoiceChip, 'Tous les rayons'), findsOneWidget);
-      expect(find.widgetWithText(ChoiceChip, 'Crémerie & Produits Laitiers'), findsOneWidget);
+        // Vérification du défilement horizontal des rayons
+        expect(
+          find.widgetWithText(ChoiceChip, 'Tous les rayons'),
+          findsOneWidget,
+        );
+        expect(
+          find.widgetWithText(ChoiceChip, 'Crémerie & Produits Laitiers'),
+          findsOneWidget,
+        );
 
-      // Les produits sont listés verticalement dans Expanded
-      expect(find.text('Lait Soummam Candia 1L'), findsOneWidget);
-      expect(find.text('Baguette de Pain tradition'), findsOneWidget);
-    });
+        // Les produits sont listés verticalement dans Expanded
+        expect(find.text('Lait Soummam Candia 1L'), findsOneWidget);
+        expect(find.text('Baguette de Pain tradition'), findsOneWidget);
+      },
+    );
 
-    testWidgets('2. Désélection d\'un produit et recalcul immédiat du panier et budget', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      '2. Désélection d\'un produit et recalcul immédiat du panier et budget',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Panier initial vide
-      expect(find.text('Voir mon panier'), findsNothing);
+        // Panier initial vide
+        expect(find.text('Voir mon panier'), findsNothing);
 
-      // 1. Ajouter Lait Candia au panier
-      final addIcons = find.byIcon(Icons.add);
-      expect(addIcons, findsWidgets);
-      await tester.tap(addIcons.first);
-      await tester.pumpAndSettle();
+        // 1. Ajouter Lait Candia au panier
+        final addIcons = find.byIcon(Icons.add);
+        expect(addIcons, findsWidgets);
+        await tester.tap(addIcons.first);
+        await tester.pumpAndSettle();
 
-      // Panier contient 1 article
-      expect(find.text('1 article au panier'), findsOneWidget);
-      expect(find.text('Liste prête 🛒'), findsOneWidget);
+        // Panier contient 1 article
+        expect(find.text('1 article au panier'), findsOneWidget);
+        expect(find.text('Liste prête 🛒'), findsOneWidget);
 
-      // Vérifier que le bouton de désélection (poubelle) est apparu sur la carte produit
-      final deleteProductIcon = find.byIcon(Icons.delete_outline);
-      expect(deleteProductIcon, findsWidgets);
+        // Vérifier que le bouton de désélection (poubelle) est apparu sur la carte produit
+        final deleteProductIcon = find.byIcon(Icons.delete_outline);
+        expect(deleteProductIcon, findsWidgets);
 
-      // 2. Cliquer sur la poubelle pour désélectionner immédiatement le produit
-      await tester.tap(deleteProductIcon.first);
-      await tester.pumpAndSettle();
+        // 2. Cliquer sur la poubelle pour désélectionner immédiatement le produit
+        await tester.tap(deleteProductIcon.first);
+        await tester.pumpAndSettle();
 
-      // Le produit doit être retiré du panier et la barre du panier disparaître
-      expect(find.text('Voir mon panier'), findsNothing);
+        // Le produit doit être retiré du panier et la barre du panier disparaître
+        expect(find.text('Voir mon panier'), findsNothing);
 
-      // La carte produit doit avoir retrouvé son état initial non sélectionné (bouton +)
-      expect(find.byIcon(Icons.add), findsWidgets);
-    });
+        // La carte produit doit avoir retrouvé son état initial non sélectionné (bouton +)
+        expect(find.byIcon(Icons.add), findsWidgets);
+      },
+    );
 
-    testWidgets('3. Ajout d\'un produit personnalisé par saisie manuelle et mise à jour du panier', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      '3. Ajout d\'un produit personnalisé par saisie manuelle et mise à jour du panier',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Cliquer sur le bouton « + Produit personnalisé »
-      await tester.tap(find.text('+ Produit personnalisé'));
-      await tester.pumpAndSettle();
+        // Cliquer sur le bouton « + Produit personnalisé »
+        await tester.tap(find.text('+ Produit personnalisé'));
+        await tester.pumpAndSettle();
 
-      // Formulaire ouvert
-      expect(find.text('Article personnalisé ✍️'), findsOneWidget);
+        // Formulaire ouvert
+        expect(find.text('Article personnalisé ✍️'), findsOneWidget);
 
-      // Saisir les champs obligatoires
-      final textFields = find.byType(TextField);
-      await tester.enterText(textFields.at(1), 'Chbiki artisanal'); // Nom
-      await tester.enterText(textFields.at(2), '3'); // Quantité
-      await tester.enterText(textFields.at(3), 'Traditionnel sans sel'); // Description
+        // Saisir les champs obligatoires
+        final textFields = find.byType(TextField);
+        await tester.enterText(textFields.at(1), 'Chbiki artisanal'); // Nom
+        await tester.enterText(textFields.at(2), '3'); // Quantité
+        await tester.enterText(
+          textFields.at(3),
+          'Traditionnel sans sel',
+        ); // Description
 
-      // Valider l'ajout
-      await tester.tap(find.text('Ajouter'));
-      await tester.pumpAndSettle();
+        // Valider l'ajout
+        await tester.tap(find.text('Ajouter'));
+        await tester.pumpAndSettle();
 
-      // Le panier est mis à jour immédiatement
-      expect(find.text('3 articles au panier'), findsOneWidget);
-      expect(find.text('Liste prête 🛒'), findsOneWidget);
-    });
+        // Le panier est mis à jour immédiatement
+        expect(find.text('3 articles au panier'), findsOneWidget);
+        expect(find.text('Liste prête 🛒'), findsOneWidget);
+      },
+    );
 
-    testWidgets('4. Suppression d\'un article personnalisé depuis le panier modal', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createTestWidget());
-      await tester.pumpAndSettle();
+    testWidgets(
+      '4. Suppression d\'un article personnalisé depuis le panier modal',
+      (tester) async {
+        await tester.pumpWidget(createTestWidget());
+        await tester.pumpAndSettle();
 
-      // Ajouter un article personnalisé
-      await tester.tap(find.text('+ Produit personnalisé'));
-      await tester.pumpAndSettle();
+        // Ajouter un article personnalisé
+        await tester.tap(find.text('+ Produit personnalisé'));
+        await tester.pumpAndSettle();
 
-      final textFields = find.byType(TextField);
-      await tester.enterText(textFields.at(1), 'Huile d\'olive kabyle');
-      await tester.enterText(textFields.at(2), '2');
-      await tester.tap(find.text('Ajouter'));
-      await tester.pumpAndSettle();
+        final textFields = find.byType(TextField);
+        await tester.enterText(textFields.at(1), 'Huile d\'olive kabyle');
+        await tester.enterText(textFields.at(2), '2');
+        await tester.tap(find.text('Ajouter'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('2 articles au panier'), findsOneWidget);
+        expect(find.text('2 articles au panier'), findsOneWidget);
 
-      // Ouvrir le panier
-      await tester.tap(find.text('Voir mon panier'));
-      await tester.pumpAndSettle();
+        // Ouvrir le panier
+        await tester.tap(find.text('Voir mon panier'));
+        await tester.pumpAndSettle();
 
-      // Vérifier le badge « Sur mesure »
-      expect(find.text('Sur mesure'), findsOneWidget);
-      expect(find.text('Huile d\'olive kabyle'), findsOneWidget);
+        // Vérifier le badge « Sur mesure »
+        expect(find.text('Sur mesure'), findsOneWidget);
+        expect(find.text('Huile d\'olive kabyle'), findsOneWidget);
 
-      // Supprimer l'article via l'icône poubelle dans le panier
-      final trashIcons = find.byIcon(Icons.delete_outline);
-      expect(trashIcons, findsWidgets);
-      await tester.tap(trashIcons.first);
-      await tester.pumpAndSettle();
+        // Supprimer l'article via l'icône poubelle dans le panier
+        final trashIcons = find.byIcon(Icons.delete_outline);
+        expect(trashIcons, findsWidgets);
+        await tester.tap(trashIcons.first);
+        await tester.pumpAndSettle();
 
-      // Panier vide dans le modal
-      expect(find.text('Votre panier est vide.\nSélectionnez des articles dans le catalogue.'), findsOneWidget);
-    });
+        // Panier vide dans le modal
+        expect(
+          find.text(
+            'Votre panier est vide.\nSélectionnez des articles dans le catalogue.',
+          ),
+          findsOneWidget,
+        );
+      },
+    );
   });
 
   group('GESTION ET ANNULATION DE COMMANDE CLIENT', () {
-    test('5. Le client peut annuler une commande encore en attente (pending)', () async {
-      final errand = ErrandModel(
-        errandId: 'errand_pending_1',
-        clientId: 'client_owner',
-        storeName: 'Supérette El Amel',
-        deliveryAddress: 'Hydra, Alger',
-        estimatedBudget: 2500,
-        securePin: '1234',
-        status: ErrandStatus.pending,
-      );
-      await errandService.createErrand(errand);
+    test(
+      '5. Le client peut annuler une commande encore en attente (pending)',
+      () async {
+        final errand = ErrandModel(
+          errandId: 'errand_pending_1',
+          clientId: 'client_owner',
+          storeName: 'Supérette El Amel',
+          deliveryAddress: 'Hydra, Alger',
+          estimatedBudget: 2500,
+          securePin: '1234',
+          status: ErrandStatus.pending,
+        );
+        await errandService.createErrand(errand);
 
-      // Annulation
-      await errandService.cancelErrand(
-        errandId: 'errand_pending_1',
-        clientId: 'client_owner',
-        reason: 'Erreur d\'adresse',
-      );
+        // Annulation
+        await errandService.cancelErrand(
+          errandId: 'errand_pending_1',
+          clientId: 'client_owner',
+          reason: 'Erreur d\'adresse',
+        );
 
-      final updated = await errandService.getErrand('errand_pending_1');
-      expect(updated?.status, equals(ErrandStatus.cancelled));
-    });
+        final updated = await errandService.getErrand('errand_pending_1');
+        expect(updated?.status, equals(ErrandStatus.cancelled));
+      },
+    );
 
     test('6. Une commande annulée disparaît du radar des shoppeurs', () async {
       final errand = ErrandModel(
@@ -320,58 +346,71 @@ void main() {
       );
 
       pendingList = await errandService.streamPendingErrands().first;
-      expect(pendingList.map((e) => e.errandId), isNot(contains('errand_radar_1')));
+      expect(
+        pendingList.map((e) => e.errandId),
+        isNot(contains('errand_radar_1')),
+      );
     });
 
-    test('7. Un tiers ne peut pas annuler la commande d\'un autre client', () async {
-      final errand = ErrandModel(
-        errandId: 'errand_auth_test',
-        clientId: 'client_legitime',
-        storeName: 'Boucherie',
-        deliveryAddress: 'Alger',
-        estimatedBudget: 4000,
-        securePin: '9999',
-        status: ErrandStatus.pending,
-      );
-      await errandService.createErrand(errand);
-
-      expect(
-        () => errandService.cancelErrand(
+    test(
+      '7. Un tiers ne peut pas annuler la commande d\'un autre client',
+      () async {
+        final errand = ErrandModel(
           errandId: 'errand_auth_test',
-          clientId: 'client_usurpateur',
-        ),
-        throwsA(isA<StateError>().having(
-          (e) => e.message,
-          'message',
-          contains('unauthorized'),
-        )),
-      );
-    });
+          clientId: 'client_legitime',
+          storeName: 'Boucherie',
+          deliveryAddress: 'Alger',
+          estimatedBudget: 4000,
+          securePin: '9999',
+          status: ErrandStatus.pending,
+        );
+        await errandService.createErrand(errand);
 
-    test('8. Une commande terminée (completed) ne peut pas être annulée', () async {
-      final errand = ErrandModel(
-        errandId: 'errand_completed_test',
-        clientId: 'client_owner',
-        storeName: 'Supérette',
-        deliveryAddress: 'Alger',
-        estimatedBudget: 1200,
-        securePin: '1111',
-        status: ErrandStatus.completed,
-      );
-      await errandService.createErrand(errand);
+        expect(
+          () => errandService.cancelErrand(
+            errandId: 'errand_auth_test',
+            clientId: 'client_usurpateur',
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('unauthorized'),
+            ),
+          ),
+        );
+      },
+    );
 
-      expect(
-        () => errandService.cancelErrand(
+    test(
+      '8. Une commande terminée (completed) ne peut pas être annulée',
+      () async {
+        final errand = ErrandModel(
           errandId: 'errand_completed_test',
           clientId: 'client_owner',
-        ),
-        throwsA(isA<StateError>().having(
-          (e) => e.message,
-          'message',
-          contains('cannot_cancel_completed'),
-        )),
-      );
-    });
+          storeName: 'Supérette',
+          deliveryAddress: 'Alger',
+          estimatedBudget: 1200,
+          securePin: '1111',
+          status: ErrandStatus.completed,
+        );
+        await errandService.createErrand(errand);
+
+        expect(
+          () => errandService.cancelErrand(
+            errandId: 'errand_completed_test',
+            clientId: 'client_owner',
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (e) => e.message,
+              'message',
+              contains('cannot_cancel_completed'),
+            ),
+          ),
+        );
+      },
+    );
 
     test('9. Une erreur réseau lève une exception sans faux succès', () async {
       errandService.simulateNetworkError = true;
@@ -387,56 +426,60 @@ void main() {
   });
 
   group('AFFICHAGE CÔTÉ SHOPPER (ShoppingModeScreen)', () {
-    testWidgets('10. Le shoppeur voit le badge « Produit personnalisé » et les détails de l\'article', (
-      tester,
-    ) async {
-      final errand = const ErrandModel(
-        errandId: 'errand_shopper_test',
-        clientId: 'client_test',
-        storeName: 'Supermarché Ardis',
-        deliveryAddress: 'Mohammadia',
-        estimatedBudget: 3500,
-        securePin: '4321',
-        status: ErrandStatus.shopping,
-      );
+    testWidgets(
+      '10. Le shoppeur voit le badge « Produit personnalisé » et les détails de l\'article',
+      (tester) async {
+        final errand = const ErrandModel(
+          errandId: 'errand_shopper_test',
+          clientId: 'client_test',
+          storeName: 'Supermarché Ardis',
+          deliveryAddress: 'Mohammadia',
+          estimatedBudget: 3500,
+          securePin: '4321',
+          status: ErrandStatus.shopping,
+        );
 
-      final customItem = const ErrandItemModel(
-        itemId: 'item_custom_1',
-        name: 'Fromage de chèvre frais',
-        quantity: 2.0,
-        unit: 'kg',
-        notes: 'Format sous vide de préférence',
-        isCustom: true,
-        brand: 'Terroir Algérien',
-        photoUrl: 'https://example.com/fromage.jpg',
-        status: ErrandItemStatus.pending,
-      );
+        final customItem = const ErrandItemModel(
+          itemId: 'item_custom_1',
+          name: 'Fromage de chèvre frais',
+          quantity: 2.0,
+          unit: 'kg',
+          notes: 'Format sous vide de préférence',
+          isCustom: true,
+          brand: 'Terroir Algérien',
+          photoUrl: 'https://example.com/fromage.jpg',
+          status: ErrandItemStatus.pending,
+        );
 
-      errandService.mockErrands[errand.errandId] = errand;
-      errandService.mockItems[errand.errandId] = [customItem];
+        errandService.mockErrands[errand.errandId] = errand;
+        errandService.mockItems[errand.errandId] = [customItem];
 
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: ShoppingModeScreen(
-            errand: errand,
-            errandService: errandService,
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: ShoppingModeScreen(
+              errand: errand,
+              errandService: errandService,
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      // Vérifier le nom et les détails
-      expect(find.text('Fromage de chèvre frais'), findsOneWidget);
-      expect(find.text('2 kg'), findsOneWidget);
-      expect(find.text('Note client : Format sous vide de préférence'), findsOneWidget);
-      expect(find.text('Marque : Terroir Algérien'), findsOneWidget);
+        // Vérifier le nom et les détails
+        expect(find.text('Fromage de chèvre frais'), findsOneWidget);
+        expect(find.text('2 kg'), findsOneWidget);
+        expect(
+          find.text('Note client : Format sous vide de préférence'),
+          findsOneWidget,
+        );
+        expect(find.text('Marque : Terroir Algérien'), findsOneWidget);
 
-      // Vérifier le badge Produit personnalisé
-      expect(find.text('Produit personnalisé ✍️'), findsOneWidget);
+        // Vérifier le badge Produit personnalisé
+        expect(find.text('Produit personnalisé ✍️'), findsOneWidget);
 
-      // Vérifier la présence du bouton Trouvé
-      expect(find.text('Trouvé'), findsOneWidget);
-    });
+        // Vérifier la présence du bouton Trouvé
+        expect(find.text('Trouvé'), findsOneWidget);
+      },
+    );
   });
 }

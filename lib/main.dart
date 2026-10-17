@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -24,7 +25,9 @@ import 'ui/screens/delivery_tracking_screen.dart';
 /// Doit impérativement être une fonction de haut niveau (top-level) annotée.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('FCM background message reçu: ${message.messageId} (data: ${message.data})');
+  debugPrint(
+    'FCM background message reçu: ${message.messageId} (data: ${message.data})',
+  );
 }
 
 void main() async {
@@ -115,10 +118,9 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
     _authService = widget.authService ?? AuthService(userService: _userService);
     _dispatchService = widget.dispatchService ?? NotificationDispatchService();
     _notificationService = widget.notificationService ?? NotificationService();
-    _errandService = widget.errandService ??
-        ErrandService(
-          notificationDispatchService: _dispatchService,
-        );
+    _errandService =
+        widget.errandService ??
+        ErrandService(notificationDispatchService: _dispatchService);
     _catalogService = widget.catalogService ?? ProductCatalogService.instance;
     _catalogService.loadCatalog();
     UserModeService.instance.init();
@@ -132,10 +134,7 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
     try {
       // P2-1: Seules la géolocalisation et la caméra sont demandées au démarrage
       // La permission notification est déléguée au moment opportun (connexion utilisateur)
-      await [
-        Permission.location,
-        Permission.camera,
-      ].request();
+      await [Permission.location, Permission.camera].request();
     } catch (e) {
       debugPrint('Startup permissions request error: $e');
     }
@@ -146,22 +145,27 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
     _authSub = _authService.authStateChanges.listen((user) async {
       if (user != null) {
         debugPrint(
-            'DiliExpressApp: Utilisateur authentifié ${user.uid}, initialisation des notifications.');
+          'DiliExpressApp: Utilisateur authentifié ${user.uid}, initialisation des notifications.',
+        );
         await _notificationService.initializeForUser(user.uid);
       } else {
-        debugPrint('DiliExpressApp: Utilisateur déconnecté, révocation des notifications.');
+        debugPrint(
+          'DiliExpressApp: Utilisateur déconnecté, révocation des notifications.',
+        );
         await _notificationService.unregisterUser();
       }
     });
 
     // 2. Écoute des notifications reçues au premier plan (Foreground)
-    _foregroundSub =
-        _notificationService.onForegroundNotification.listen((payload) {
+    _foregroundSub = _notificationService.onForegroundNotification.listen((
+      payload,
+    ) {
       if (payload.title != null || payload.body != null) {
         _scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text(
-                '${payload.title ?? '9DILI EXPRESS'}: ${payload.body ?? ''}'),
+              '${payload.title ?? '9DILI EXPRESS'}: ${payload.body ?? ''}',
+            ),
             backgroundColor: AppTheme.primaryOrange,
             duration: const Duration(seconds: 4),
             action: payload.errandId != null
@@ -188,17 +192,20 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
         });
 
         // 4. Gestion du clic sur notification (App tuée / démarrage à froid)
-        FirebaseMessaging.instance.getInitialMessage().then((message) {
-          if (message != null) {
-            final errandId =
-                message.data['errandId'] ?? message.data['errand_id'];
-            if (errandId != null) {
-              _navigateToErrand(errandId.toString());
-            }
-          }
-        }).catchError((e) {
-          debugPrint('getInitialMessage error: $e');
-        });
+        FirebaseMessaging.instance
+            .getInitialMessage()
+            .then((message) {
+              if (message != null) {
+                final errandId =
+                    message.data['errandId'] ?? message.data['errand_id'];
+                if (errandId != null) {
+                  _navigateToErrand(errandId.toString());
+                }
+              }
+            })
+            .catchError((e) {
+              debugPrint('getInitialMessage error: $e');
+            });
       } catch (e) {
         debugPrint('FCM interaction listeners setup error: $e');
       }
@@ -206,7 +213,9 @@ class _DiliExpressAppState extends State<DiliExpressApp> {
   }
 
   Future<void> _navigateToErrand(String errandId) async {
-    debugPrint('Navigation vers la course $errandId suite à un clic notification');
+    debugPrint(
+      'Navigation vers la course $errandId suite à un clic notification',
+    );
     final nav = _navigatorKey.currentState;
     if (nav == null) return;
     try {

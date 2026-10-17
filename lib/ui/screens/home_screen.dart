@@ -188,7 +188,9 @@ class _HomeScreenState extends State<HomeScreen> {
             // Liste des prérequis
             _buildPrerequisiteItem(
               title: 'Nom complet',
-              subtitle: user.fullName.isNotEmpty ? user.fullName : 'À renseigner',
+              subtitle: user.fullName.isNotEmpty
+                  ? user.fullName
+                  : 'À renseigner',
               isValid: prereq.hasFullName,
             ),
             _buildPrerequisiteItem(
@@ -304,15 +306,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Icon(Icons.phone_android, color: AppTheme.warningOrange),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(title, style: const TextStyle(fontSize: 16)),
-            ),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
           ],
         ),
-        content: Text(
-          message,
-          style: const TextStyle(fontSize: 13),
-        ),
+        content: Text(message, style: const TextStyle(fontSize: 13)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -348,8 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!user.hasValidPhone) {
       _showMissingPhoneDialog(
         title: 'Numéro de téléphone requis',
-        message:
-            'Pour créer une course et être joignable par les shoppeurs, veuillez renseigner votre numéro de téléphone dans votre profil.',
+        message: 'Pour créer une course et être joignable par les shoppeurs, veuillez renseigner votre numéro de téléphone dans votre profil.',
       );
       return;
     }
@@ -375,11 +371,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!isPending && !isAccepted) {
       String explanation;
       if (errand.status == ErrandStatus.shopping) {
-        explanation =
-            'Le shoppeur est actuellement en magasin pour effectuer vos achats. Pour toute annulation ou ajustement, veuillez le contacter directement par téléphone.';
+        explanation = 'Le shoppeur est actuellement en magasin pour effectuer vos achats. Pour toute annulation ou ajustement, veuillez le contacter directement par téléphone.';
       } else if (errand.status == ErrandStatus.delivering) {
-        explanation =
-            'Le shoppeur est actuellement en route pour vous livrer. L\'annulation unilatérale n\'est plus possible à ce stade.';
+        explanation = 'Le shoppeur est actuellement en route pour vous livrer. L\'annulation unilatérale n\'est plus possible à ce stade.';
       } else if (errand.status == ErrandStatus.completed) {
         explanation = 'Cette course est déjà clôturée et archivée.';
       } else {
@@ -389,7 +383,9 @@ class _HomeScreenState extends State<HomeScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           title: const Row(
             children: [
               Icon(Icons.info_outline, color: AppTheme.violetAccent),
@@ -431,9 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Icon(Icons.warning_amber_rounded, color: AppTheme.errorRed),
             const SizedBox(width: 8),
-            Expanded(
-              child: Text(title, style: const TextStyle(fontSize: 16)),
-            ),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 16))),
           ],
         ),
         content: Text(message, style: const TextStyle(fontSize: 13)),
@@ -488,8 +482,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!shopper.hasValidPhone) {
       _showMissingPhoneDialog(
         title: 'Numéro de téléphone requis',
-        message:
-            'Pour faire une offre sur une course, votre numéro de téléphone doit être renseigné sur votre profil.',
+        message: 'Pour faire une offre sur une course, votre numéro de téléphone doit être renseigné sur votre profil.',
       );
       return;
     }
@@ -622,12 +615,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     isValidPhone
                         ? 'Numéro : $phone'
                         : (phone != null && phone.isNotEmpty
-                            ? 'Numéro invalide : $phone'
-                            : 'Numéro de téléphone non renseigné sur le profil.'),
+                              ? 'Numéro invalide : $phone'
+                              : 'Numéro de téléphone non renseigné sur le profil.'),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isValidPhone ? AppTheme.textDark : AppTheme.errorRed,
+                      color: isValidPhone
+                          ? AppTheme.textDark
+                          : AppTheme.errorRed,
                     ),
                   ),
                   if (isValidPhone) ...[
@@ -676,10 +671,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isValidPhone ? AppTheme.accentGreen : Colors.grey.shade400,
+              backgroundColor: isValidPhone
+                  ? AppTheme.accentGreen
+                  : Colors.grey.shade400,
               foregroundColor: Colors.white,
             ),
-            onPressed: isValidPhone ? () => Navigator.of(dialogCtx).pop(true) : null,
+            onPressed: isValidPhone
+                ? () => Navigator.of(dialogCtx).pop(true)
+                : null,
             icon: const Icon(Icons.check_circle_outline, size: 18),
             label: const Text('J\'atteste l\'appel'),
           ),
@@ -1038,7 +1037,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh, color: AppTheme.violetAccent),
+                    icon: const Icon(
+                      Icons.refresh,
+                      color: AppTheme.violetAccent,
+                    ),
                     tooltip: 'Actualiser ma position GPS',
                     onPressed: _initGpsLocation,
                   ),
@@ -1297,24 +1299,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                 OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: AppTheme.errorRed,
-                                    side: const BorderSide(color: AppTheme.errorRed),
+                                    side: const BorderSide(
+                                      color: AppTheme.errorRed,
+                                    ),
                                   ),
                                   onPressed: () =>
                                       _confirmCancelErrand(errand, user.uid),
-                                  icon: const Icon(Icons.cancel_outlined, size: 16),
+                                  icon: const Icon(
+                                    Icons.cancel_outlined,
+                                    size: 16,
+                                  ),
                                   label: const Text(
                                     'Retirer',
                                     style: TextStyle(fontSize: 12),
                                   ),
                                 ),
-                              ] else if (errand.status == ErrandStatus.cancelled) ...[
+                              ] else if (errand.status ==
+                                  ErrandStatus.cancelled) ...[
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.errorRed.withValues(alpha: 0.08),
+                                    color: AppTheme.errorRed.withValues(
+                                      alpha: 0.08,
+                                    ),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Row(
@@ -1474,8 +1484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (val && !shopper.hasValidPhone) {
                     _showMissingPhoneDialog(
                       title: 'Numéro de téléphone requis',
-                      message:
-                          'Pour passer en ligne et recevoir des alertes de courses sur le Radar, veuillez renseigner un numéro de téléphone valide sur votre profil.',
+                      message: 'Pour passer en ligne et recevoir des alertes de courses sur le Radar, veuillez renseigner un numéro de téléphone valide sur votre profil.',
                     );
                     return;
                   }
@@ -1945,10 +1954,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: (hasEnoughCash
-                                            ? AppTheme.accentGreen
-                                            : AppTheme.errorRed)
-                                        .withValues(alpha: 0.12),
+                                    color:
+                                        (hasEnoughCash
+                                                ? AppTheme.accentGreen
+                                                : AppTheme.errorRed)
+                                            .withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(

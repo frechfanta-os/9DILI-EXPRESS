@@ -24,14 +24,14 @@ class CatalogLoadException implements Exception {
 /// - Index O(1) dédié pour les codes-barres (scanners de magasin).
 /// - Zéro dépendance payante, zéro base de données distante.
 class ProductCatalogService {
-  static const String defaultAssetPath =
-      'assets/data/algeria_lsl_flat.json';
+  static const String defaultAssetPath = 'assets/data/algeria_lsl_flat.json';
 
   /// Instance partagée (Singleton) pour réutilisation à travers l'application
   static final ProductCatalogService instance = ProductCatalogService();
 
   /// Callback de diagnostic pour tracer le cycle de vie du catalogue
-  static void Function(String event, Map<String, dynamic> data)? onDiagnosticEvent;
+  static void Function(String event, Map<String, dynamic> data)?
+  onDiagnosticEvent;
 
   List<ProductModel> _products = [];
   final Map<String, ProductModel> _barcodeMap = {};
@@ -116,6 +116,7 @@ class ProductCatalogService {
             }
           }
         }
+
         extractLeafProducts(decoded);
       } else {
         throw CatalogLoadException(

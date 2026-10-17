@@ -60,7 +60,9 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
                       fit: BoxFit.contain,
                       errorBuilder: (_, _, _) => const Padding(
                         padding: EdgeInsets.all(40),
-                        child: Center(child: Text('Image distante indisponible')),
+                        child: Center(
+                          child: Text('Image distante indisponible'),
+                        ),
                       ),
                     )
                   : Image.file(
@@ -77,6 +79,7 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
       ),
     );
   }
+
   void _openReplacementDialog(ErrandItemModel item) {
     final noteCtrl = TextEditingController(text: item.replacementNote ?? '');
 
@@ -234,7 +237,8 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       if (item.photoUrl != null &&
                                           item.photoUrl!.isNotEmpty) ...[
@@ -249,19 +253,25 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
                                               ClipRRect(
                                                 borderRadius:
                                                     BorderRadius.circular(10),
-                                                child: item.photoUrl!
-                                                        .startsWith('http')
+                                                child:
+                                                    item.photoUrl!.startsWith(
+                                                      'http',
+                                                    )
                                                     ? Image.network(
                                                         item.photoUrl!,
                                                         width: 54,
                                                         height: 54,
                                                         fit: BoxFit.cover,
                                                         errorBuilder:
-                                                            (_, _, _) =>
-                                                                const Icon(
-                                                          Icons.broken_image,
-                                                          size: 40,
-                                                        ),
+                                                            (
+                                                              _,
+                                                              _,
+                                                              _,
+                                                            ) => const Icon(
+                                                              Icons
+                                                                  .broken_image,
+                                                              size: 40,
+                                                            ),
                                                       )
                                                     : Image.file(
                                                         File(item.photoUrl!),
@@ -269,25 +279,30 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
                                                         height: 54,
                                                         fit: BoxFit.cover,
                                                         errorBuilder:
-                                                            (_, _, _) =>
-                                                                const Icon(
-                                                          Icons.broken_image,
-                                                          size: 40,
-                                                        ),
+                                                            (
+                                                              _,
+                                                              _,
+                                                              _,
+                                                            ) => const Icon(
+                                                              Icons
+                                                                  .broken_image,
+                                                              size: 40,
+                                                            ),
                                                       ),
                                               ),
                                               Positioned(
                                                 bottom: 2,
                                                 right: 2,
                                                 child: Container(
-                                                  padding:
-                                                      const EdgeInsets.all(2),
+                                                  padding: const EdgeInsets.all(
+                                                    2,
+                                                  ),
                                                   decoration: BoxDecoration(
                                                     color: Colors.black54,
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      4,
-                                                    ),
+                                                          4,
+                                                        ),
                                                   ),
                                                   child: const Icon(
                                                     Icons.zoom_in,
@@ -322,18 +337,18 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
                                                   ),
                                                 ),
                                                 Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 4,
-                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 10,
+                                                        vertical: 4,
+                                                      ),
                                                   decoration: BoxDecoration(
                                                     color:
                                                         AppTheme.violetSurface,
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                      10,
-                                                    ),
+                                                          10,
+                                                        ),
                                                   ),
                                                   child: Text(
                                                     '${item.quantity.toStringAsFixed(item.quantity % 1 == 0 ? 0 : 1)} ${item.unit}',
@@ -353,9 +368,9 @@ class _ShoppingModeScreenState extends State<ShoppingModeScreen> {
                                               Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                  horizontal: 6,
-                                                  vertical: 2,
-                                                ),
+                                                      horizontal: 6,
+                                                      vertical: 2,
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color: AppTheme.primaryOrange
                                                       .withValues(alpha: 0.15),

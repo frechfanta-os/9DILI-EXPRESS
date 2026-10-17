@@ -76,15 +76,16 @@ class ProductModel {
     final aisleNameAr = merch?['aisle_name_ar']?.toString();
     final aisleCode = merch?['aisle_code']?.toString();
 
-    final category = json['category']?.toString() ??
+    final category =
+        json['category']?.toString() ??
         aisleNameFr ??
         merch?['category']?.toString();
-    final subCategory = json['sub_category']?.toString() ??
-        merch?['sub_category']?.toString();
-    final isWeighable = json['is_weighable'] == true ||
-        packaging?['is_weighable'] == true;
-    final unitType = json['unit_type']?.toString() ??
-        packaging?['unit_type']?.toString();
+    final subCategory =
+        json['sub_category']?.toString() ?? merch?['sub_category']?.toString();
+    final isWeighable =
+        json['is_weighable'] == true || packaging?['is_weighable'] == true;
+    final unitType =
+        json['unit_type']?.toString() ?? packaging?['unit_type']?.toString();
     final rawUnitVal = json['unit_value'] ?? packaging?['unit_value'];
     final unitValue = rawUnitVal is num ? rawUnitVal : null;
 

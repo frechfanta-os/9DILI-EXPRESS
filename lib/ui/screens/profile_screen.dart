@@ -76,7 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _isSaving = false;
           _isError = true;
-          _feedbackMessage = 'Le montant de trésorerie ne peut pas être négatif.';
+          _feedbackMessage =
+              'Le montant de trésorerie ne peut pas être négatif.';
         });
         return;
       }
@@ -98,8 +99,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _feedbackMessage = isSuccess
             ? 'Profil et trésorerie enregistrés avec succès !'
             : (cashError ??
-                authResult.errorMessage ??
-                'Erreur lors de la mise à jour.');
+                  authResult.errorMessage ??
+                  'Erreur lors de la mise à jour.');
       });
     }
   }
@@ -350,90 +351,105 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               );
                             },
                           ),
-                            const SizedBox(height: 10),
-                            TextFormField(
-                              controller: _cashController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                labelText: 'Trésorerie en poche (DA)',
-                                hintText: 'Montant disponible pour avancer les achats',
-                                prefixIcon: Icon(
-                                  Icons.account_balance_wallet_outlined,
-                                ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _cashController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Trésorerie en poche (DA)',
+                              hintText:
+                                  'Montant disponible pour avancer les achats',
+                              prefixIcon: Icon(
+                                Icons.account_balance_wallet_outlined,
                               ),
                             ),
-                            const SizedBox(height: 14),
-                            DropdownButtonFormField<String>(
-                              initialValue: userModel.transportType,
-                              isExpanded: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Moyen de déplacement',
-                                prefixIcon: Icon(Icons.directions_bike),
-                              ),
-                              selectedItemBuilder: (BuildContext context) {
-                                return const [
-                                  Text('🚶 À pied', overflow: TextOverflow.ellipsis),
-                                  Text('🚲 Vélo', overflow: TextOverflow.ellipsis),
-                                  Text('🛴 Trottinette', overflow: TextOverflow.ellipsis),
-                                  Text('🛵 Moto / Scooter', overflow: TextOverflow.ellipsis),
-                                  Text('🚗 Voiture', overflow: TextOverflow.ellipsis),
-                                ];
-                              },
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'walking',
-                                  child: Text(
-                                    '🚶 À pied (Max 1.5 km - 5 kg)',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'bicycle',
-                                  child: Text(
-                                    '🚲 Vélo (Max 3.5 km - 10 kg)',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'scooter',
-                                  child: Text(
-                                    '🛴 Trottinette (Max 3 km - 8 kg)',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'motorcycle',
-                                  child: Text(
-                                    '🛵 Moto / Scooter (Max 10 km - 20 kg)',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'car',
-                                  child: Text(
-                                    '🚗 Voiture (Max 25 km - 80+ kg)',
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) {
-                                  widget.userService.updateTransportSettings(
-                                    userModel.uid,
-                                    transportType: val,
-                                    searchRadiusKm: userModel.searchRadiusKm,
-                                  );
-                                }
-                              },
+                          ),
+                          const SizedBox(height: 14),
+                          DropdownButtonFormField<String>(
+                            initialValue: userModel.transportType,
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Moyen de déplacement',
+                              prefixIcon: Icon(Icons.directions_bike),
                             ),
-                          ],
-                        ),
+                            selectedItemBuilder: (BuildContext context) {
+                              return const [
+                                Text(
+                                  '🚶 À pied',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '🚲 Vélo',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '🛴 Trottinette',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '🛵 Moto / Scooter',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '🚗 Voiture',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ];
+                            },
+                            items: const [
+                              DropdownMenuItem(
+                                value: 'walking',
+                                child: Text(
+                                  '🚶 À pied (Max 1.5 km - 5 kg)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'bicycle',
+                                child: Text(
+                                  '🚲 Vélo (Max 3.5 km - 10 kg)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'scooter',
+                                child: Text(
+                                  '🛴 Trottinette (Max 3 km - 8 kg)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'motorcycle',
+                                child: Text(
+                                  '🛵 Moto / Scooter (Max 10 km - 20 kg)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'car',
+                                child: Text(
+                                  '🚗 Voiture (Max 25 km - 80+ kg)',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                            onChanged: (val) {
+                              if (val != null) {
+                                widget.userService.updateTransportSettings(
+                                  userModel.uid,
+                                  transportType: val,
+                                  searchRadiusKm: userModel.searchRadiusKm,
+                                );
+                              }
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                  const SizedBox(height: 16),
 
                   // Édition des informations
                   Card(

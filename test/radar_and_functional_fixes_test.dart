@@ -14,11 +14,11 @@ void main() {
     test('Interception explicite de PlatformException avec code 10', () {
       final exception = PlatformException(
         code: 'sign_in_failed',
-        message:
-            'com.google.android.gms.common.api.ApiException: 10: ',
+        message: 'com.google.android.gms.common.api.ApiException: 10: ',
       );
 
-      final isCode10 = exception.code == 'sign_in_failed' &&
+      final isCode10 =
+          exception.code == 'sign_in_failed' &&
           (exception.message?.contains('10:') ?? false);
 
       expect(isCode10, isTrue);
@@ -62,7 +62,10 @@ void main() {
       final map = bid.toMap();
       expect(map['shopperPhone'], '0555123456');
 
-      final deserialized = ErrandBidModel.fromMap(map, documentId: 'bid_test_1');
+      final deserialized = ErrandBidModel.fromMap(
+        map,
+        documentId: 'bid_test_1',
+      );
       expect(deserialized.shopperPhone, '0555123456');
     });
 
@@ -85,33 +88,42 @@ void main() {
   });
 
   group('3. Trésorerie Shopper & Modes de Transport', () {
-    test('Vérification de la trésorerie disponible par rapport au budget requis', () {
-      const shopperWithCash = UserModel(
-        uid: 'shop_1',
-        fullName: 'Ali',
-        availableCash: 5000.0,
-        role: 'shopper',
-      );
+    test(
+      'Vérification de la trésorerie disponible par rapport au budget requis',
+      () {
+        const shopperWithCash = UserModel(
+          uid: 'shop_1',
+          fullName: 'Ali',
+          availableCash: 5000.0,
+          role: 'shopper',
+        );
 
-      const shopperLowCash = UserModel(
-        uid: 'shop_2',
-        fullName: 'Omar',
-        availableCash: 1000.0,
-        role: 'shopper',
-      );
+        const shopperLowCash = UserModel(
+          uid: 'shop_2',
+          fullName: 'Omar',
+          availableCash: 1000.0,
+          role: 'shopper',
+        );
 
-      const errand = ErrandModel(
-        errandId: 'e_1',
-        clientId: 'c_1',
-        storeName: 'Boucherie',
-        deliveryAddress: 'Bab El Oued',
-        estimatedBudget: 3500.0,
-        securePin: '5678',
-      );
+        const errand = ErrandModel(
+          errandId: 'e_1',
+          clientId: 'c_1',
+          storeName: 'Boucherie',
+          deliveryAddress: 'Bab El Oued',
+          estimatedBudget: 3500.0,
+          securePin: '5678',
+        );
 
-      expect(shopperWithCash.availableCash >= errand.treasuryRequired, isTrue);
-      expect(shopperLowCash.availableCash >= errand.treasuryRequired, isFalse);
-    });
+        expect(
+          shopperWithCash.availableCash >= errand.treasuryRequired,
+          isTrue,
+        );
+        expect(
+          shopperLowCash.availableCash >= errand.treasuryRequired,
+          isFalse,
+        );
+      },
+    );
 
     test('Tous les modes de transport ont des rayons et vitesses valides', () {
       for (final type in ShopperTransportType.values) {
@@ -139,7 +151,10 @@ void main() {
       );
 
       expect(errandWithPhotoOnly.isReceiptValidated, isTrue);
-      expect(errandWithPhotoOnly.canTransitionTo(ErrandStatus.delivering), isTrue);
+      expect(
+        errandWithPhotoOnly.canTransitionTo(ErrandStatus.delivering),
+        isTrue,
+      );
     });
 
     test('isReceiptValidated débloque la livraison avec référence seule et montant > 0', () {
@@ -157,26 +172,35 @@ void main() {
       );
 
       expect(errandWithRefOnly.isReceiptValidated, isTrue);
-      expect(errandWithRefOnly.canTransitionTo(ErrandStatus.delivering), isTrue);
-    });
-
-    test('isReceiptValidated bloque la livraison si aucun justificatif fourni', () {
-      const errandNoReceipt = ErrandModel(
-        errandId: 'e_none',
-        clientId: 'c_1',
-        storeName: 'Supérette',
-        deliveryAddress: 'Kouba',
-        estimatedBudget: 1500.0,
-        securePin: '4321',
-        status: ErrandStatus.shopping,
-        ticketAmount: 1450.0,
-        ticketPhotoUrl: null,
-        ticketRef: null,
+      expect(
+        errandWithRefOnly.canTransitionTo(ErrandStatus.delivering),
+        isTrue,
       );
-
-      expect(errandNoReceipt.isReceiptValidated, isFalse);
-      expect(errandNoReceipt.canTransitionTo(ErrandStatus.delivering), isFalse);
     });
+
+    test(
+      'isReceiptValidated bloque la livraison si aucun justificatif fourni',
+      () {
+        const errandNoReceipt = ErrandModel(
+          errandId: 'e_none',
+          clientId: 'c_1',
+          storeName: 'Supérette',
+          deliveryAddress: 'Kouba',
+          estimatedBudget: 1500.0,
+          securePin: '4321',
+          status: ErrandStatus.shopping,
+          ticketAmount: 1450.0,
+          ticketPhotoUrl: null,
+          ticketRef: null,
+        );
+
+        expect(errandNoReceipt.isReceiptValidated, isFalse);
+        expect(
+          errandNoReceipt.canTransitionTo(ErrandStatus.delivering),
+          isFalse,
+        );
+      },
+    );
   });
 
   group('5. Radar Géographique — Vagues Progressives & Fraîcheur 120s', () {

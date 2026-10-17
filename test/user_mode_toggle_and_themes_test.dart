@@ -17,8 +17,9 @@ class MockUserServiceForModeTest extends UserService {
   Future<UserModel?> getUser(String uid) async => users[uid];
 
   @override
-  Stream<UserModel?> streamUser(String uid) =>
-      Stream.value(users[uid] ?? UserModel(uid: uid, fullName: 'Utilisateur Test'));
+  Stream<UserModel?> streamUser(String uid) => Stream.value(
+    users[uid] ?? UserModel(uid: uid, fullName: 'Utilisateur Test'),
+  );
 
   @override
   Future<void> saveUser(UserModel user) async {
@@ -51,61 +52,85 @@ void main() {
   });
 
   group('1. Inscription Unique & Conservation du Compte et du Profil', () {
-    test('Un seul identifiant Firebase et conservation intégrale des données', () {
-      const singleUid = 'usr_alg_99482';
-      final singleUserAccount = UserModel(
-        uid: singleUid,
-        fullName: 'Karim Hadj',
-        email: 'karim@9dili.dz',
-        phone: '0555123456',
-        availableCash: 4500.0,
-        rating: 4.9,
-        transportType: 'scooter',
-        role: 'client',
-      );
+    test(
+      'Un seul identifiant Firebase et conservation intégrale des données',
+      () {
+        const singleUid = 'usr_alg_99482';
+        final singleUserAccount = UserModel(
+          uid: singleUid,
+          fullName: 'Karim Hadj',
+          email: 'karim@9dili.dz',
+          phone: '0555123456',
+          availableCash: 4500.0,
+          rating: 4.9,
+          transportType: 'scooter',
+          role: 'client',
+        );
 
-      // Vérification que le compte est unique
-      expect(singleUserAccount.uid, equals(singleUid));
-      expect(singleUserAccount.phone, equals('0555123456'));
-      expect(singleUserAccount.availableCash, equals(4500.0));
+        // Vérification que le compte est unique
+        expect(singleUserAccount.uid, equals(singleUid));
+        expect(singleUserAccount.phone, equals('0555123456'));
+        expect(singleUserAccount.availableCash, equals(4500.0));
 
-      // Changement de mode dans l'interface
-      final modeService = UserModeService.forTesting();
-      expect(modeService.currentMode, equals(AppMode.client));
+        // Changement de mode dans l'interface
+        final modeService = UserModeService.forTesting();
+        expect(modeService.currentMode, equals(AppMode.client));
 
-      // L'utilisateur reste le même après activation du mode Shopper
-      modeService.setMode(AppMode.shopper);
-      expect(modeService.currentMode, equals(AppMode.shopper));
-      expect(singleUserAccount.uid, equals(singleUid));
-      expect(singleUserAccount.phone, equals('0555123456'));
-      expect(singleUserAccount.availableCash, equals(4500.0));
-      expect(singleUserAccount.rating, equals(4.9));
-    });
+        // L'utilisateur reste le même après activation du mode Shopper
+        modeService.setMode(AppMode.shopper);
+        expect(modeService.currentMode, equals(AppMode.shopper));
+        expect(singleUserAccount.uid, equals(singleUid));
+        expect(singleUserAccount.phone, equals('0555123456'));
+        expect(singleUserAccount.availableCash, equals(4500.0));
+        expect(singleUserAccount.rating, equals(4.9));
+      },
+    );
   });
 
   group('2. Système de Thèmes Partagé (Client Vert #10B981 / Shopper Orange #FF6D00)', () {
-    test('Les couleurs officielles par mode respectent strictement la charte', () {
-      expect(AppTheme.clientGreen, equals(const Color(0xFF10B981)));
-      expect(AppTheme.shopperOrange, equals(const Color(0xFFFF6D00)));
+    test(
+      'Les couleurs officielles par mode respectent strictement la charte',
+      () {
+        expect(AppTheme.clientGreen, equals(const Color(0xFF10B981)));
+        expect(AppTheme.shopperOrange, equals(const Color(0xFFFF6D00)));
 
-      expect(AppTheme.primaryFor(AppMode.client), equals(AppTheme.clientGreen));
-      expect(AppTheme.primaryFor(AppMode.shopper), equals(AppTheme.shopperOrange));
-    });
+        expect(
+          AppTheme.primaryFor(AppMode.client),
+          equals(AppTheme.clientGreen),
+        );
+        expect(
+          AppTheme.primaryFor(AppMode.shopper),
+          equals(AppTheme.shopperOrange),
+        );
+      },
+    );
 
     test('ThemeData généré pour Mode Client applique le thème vert', () {
       final clientTheme = AppTheme.themeFor(AppMode.client);
 
       expect(clientTheme.colorScheme.primary, equals(AppTheme.clientGreen));
-      expect(clientTheme.floatingActionButtonTheme.backgroundColor, equals(AppTheme.clientGreen));
-      expect(clientTheme.elevatedButtonTheme.style?.backgroundColor?.resolve({}), equals(AppTheme.clientGreen));
+      expect(
+        clientTheme.floatingActionButtonTheme.backgroundColor,
+        equals(AppTheme.clientGreen),
+      );
+      expect(
+        clientTheme.elevatedButtonTheme.style?.backgroundColor?.resolve({}),
+        equals(AppTheme.clientGreen),
+      );
     });
 
     test('ThemeData généré pour Mode Shopper applique le thème orange', () {
       final shopperTheme = AppTheme.themeFor(AppMode.shopper);
 
       expect(shopperTheme.colorScheme.primary, equals(AppTheme.shopperOrange));
-      expect(shopperTheme.floatingActionButtonTheme.backgroundColor, equals(AppTheme.shopperOrange));
-      expect(shopperTheme.elevatedButtonTheme.style?.backgroundColor?.resolve({}), equals(AppTheme.shopperOrange));
+      expect(
+        shopperTheme.floatingActionButtonTheme.backgroundColor,
+        equals(AppTheme.shopperOrange),
+      );
+      expect(
+        shopperTheme.elevatedButtonTheme.style?.backgroundColor?.resolve({}),
+        equals(AppTheme.shopperOrange),
+      );
     });
 
     test('Les alertes et statuts conservent leurs couleurs sémantiques', () {
@@ -172,7 +197,10 @@ void main() {
       final result = modeService.checkShopperPrerequisites(userNoPhone);
       expect(result.isEligible, isFalse);
       expect(result.hasValidPhone, isFalse);
-      expect(result.missingPrerequisites, contains(contains('Numéro de téléphone')));
+      expect(
+        result.missingPrerequisites,
+        contains(contains('Numéro de téléphone')),
+      );
     });
 
     test('Un utilisateur avec un faux numéro court est bloqué', () {
@@ -187,109 +215,127 @@ void main() {
       expect(result.hasValidPhone, isFalse);
     });
 
-    test('Un utilisateur avec profil complet et numéro algérien est éligible', () {
-      final eligibleUser = UserModel(
-        uid: 'usr_eligible',
-        fullName: 'Yacine Belkacem',
-        phone: '0661234567',
-        transportType: 'scooter',
-        availableCash: 2000.0,
-      );
+    test(
+      'Un utilisateur avec profil complet et numéro algérien est éligible',
+      () {
+        final eligibleUser = UserModel(
+          uid: 'usr_eligible',
+          fullName: 'Yacine Belkacem',
+          phone: '0661234567',
+          transportType: 'scooter',
+          availableCash: 2000.0,
+        );
 
-      final result = modeService.checkShopperPrerequisites(eligibleUser);
-      expect(result.isEligible, isTrue);
-      expect(result.hasFullName, isTrue);
-      expect(result.hasValidPhone, isTrue);
-      expect(result.hasTransport, isTrue);
-      expect(result.missingPrerequisites, isEmpty);
-    });
+        final result = modeService.checkShopperPrerequisites(eligibleUser);
+        expect(result.isEligible, isTrue);
+        expect(result.hasFullName, isTrue);
+        expect(result.hasValidPhone, isTrue);
+        expect(result.hasTransport, isTrue);
+        expect(result.missingPrerequisites, isEmpty);
+      },
+    );
   });
 
   group('5. Conservation des Commandes et Absence d\'Effets de Bord', () {
-    test('Le changement de mode ne modifie ni ne supprime les commandes actives', () async {
-      final errandService = MockErrandServiceForModeTest();
+    test(
+      'Le changement de mode ne modifie ni ne supprime les commandes actives',
+      () async {
+        final errandService = MockErrandServiceForModeTest();
 
-      final activeErrand = ErrandModel(
-        errandId: 'errand_preserved_101',
-        clientId: 'client_1',
-        storeName: 'Supérette El Qods',
-        deliveryAddress: 'Bab Ezzouar, Alger',
-        estimatedBudget: 1500.0,
-        negotiatedCommission: 400.0,
-        securePin: '1234',
-        status: ErrandStatus.pending,
-      );
+        final activeErrand = ErrandModel(
+          errandId: 'errand_preserved_101',
+          clientId: 'client_1',
+          storeName: 'Supérette El Qods',
+          deliveryAddress: 'Bab Ezzouar, Alger',
+          estimatedBudget: 1500.0,
+          negotiatedCommission: 400.0,
+          securePin: '1234',
+          status: ErrandStatus.pending,
+        );
 
-      errandService.clientErrands.add(activeErrand);
+        errandService.clientErrands.add(activeErrand);
 
-      final modeService = UserModeService.forTesting();
-      expect(errandService.clientErrands.length, equals(1));
+        final modeService = UserModeService.forTesting();
+        expect(errandService.clientErrands.length, equals(1));
 
-      // Bascule Client -> Shopper
-      await modeService.setMode(AppMode.shopper);
-      expect(modeService.currentMode, equals(AppMode.shopper));
-      expect(errandService.clientErrands.length, equals(1));
-      expect(errandService.clientErrands.first.errandId, equals('errand_preserved_101'));
+        // Bascule Client -> Shopper
+        await modeService.setMode(AppMode.shopper);
+        expect(modeService.currentMode, equals(AppMode.shopper));
+        expect(errandService.clientErrands.length, equals(1));
+        expect(
+          errandService.clientErrands.first.errandId,
+          equals('errand_preserved_101'),
+        );
 
-      // Bascule Shopper -> Client
-      await modeService.setMode(AppMode.client);
-      expect(modeService.currentMode, equals(AppMode.client));
-      expect(errandService.clientErrands.length, equals(1));
-      expect(errandService.clientErrands.first.status, equals(ErrandStatus.pending));
-    });
+        // Bascule Shopper -> Client
+        await modeService.setMode(AppMode.client);
+        expect(modeService.currentMode, equals(AppMode.client));
+        expect(errandService.clientErrands.length, equals(1));
+        expect(
+          errandService.clientErrands.first.status,
+          equals(ErrandStatus.pending),
+        );
+      },
+    );
   });
 
   group('6. Widget Test : ClientShopperToggle', () {
-    testWidgets('Affichage Mode Client conforme à la capture (Fond vert, bouton blanc Client actif)', (tester) async {
-      AppMode selectedMode = AppMode.client;
+    testWidgets(
+      'Affichage Mode Client conforme à la capture (Fond vert, bouton blanc Client actif)',
+      (tester) async {
+        AppMode selectedMode = AppMode.client;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: ClientShopperToggle(
-                currentMode: AppMode.client,
-                onModeChanged: (m) => selectedMode = m,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: ClientShopperToggle(
+                  currentMode: AppMode.client,
+                  onModeChanged: (m) => selectedMode = m,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Client'), findsOneWidget);
-      expect(find.text('Shopper'), findsOneWidget);
+        expect(find.text('Client'), findsOneWidget);
+        expect(find.text('Shopper'), findsOneWidget);
 
-      // Vérifier le tap sur Shopper
-      await tester.tap(find.text('Shopper'));
-      await tester.pumpAndSettle();
+        // Vérifier le tap sur Shopper
+        await tester.tap(find.text('Shopper'));
+        await tester.pumpAndSettle();
 
-      expect(selectedMode, equals(AppMode.shopper));
-    });
+        expect(selectedMode, equals(AppMode.shopper));
+      },
+    );
 
-    testWidgets('Affichage Mode Shopper conforme à la capture (Fond orange, bouton blanc Shopper actif)', (tester) async {
-      AppMode selectedMode = AppMode.shopper;
+    testWidgets(
+      'Affichage Mode Shopper conforme à la capture (Fond orange, bouton blanc Shopper actif)',
+      (tester) async {
+        AppMode selectedMode = AppMode.shopper;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Center(
-              child: ClientShopperToggle(
-                currentMode: AppMode.shopper,
-                onModeChanged: (m) => selectedMode = m,
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: Center(
+                child: ClientShopperToggle(
+                  currentMode: AppMode.shopper,
+                  onModeChanged: (m) => selectedMode = m,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      expect(find.text('Client'), findsOneWidget);
-      expect(find.text('Shopper'), findsOneWidget);
+        expect(find.text('Client'), findsOneWidget);
+        expect(find.text('Shopper'), findsOneWidget);
 
-      // Vérifier le tap sur Client
-      await tester.tap(find.text('Client'));
-      await tester.pumpAndSettle();
+        // Vérifier le tap sur Client
+        await tester.tap(find.text('Client'));
+        await tester.pumpAndSettle();
 
-      expect(selectedMode, equals(AppMode.client));
-    });
+        expect(selectedMode, equals(AppMode.client));
+      },
+    );
   });
 }

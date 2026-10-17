@@ -235,17 +235,18 @@ class _AuthScreenState extends State<AuthScreen> {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               Container(
-                            decoration: BoxDecoration(
-                              color: AppTheme.primaryOrange
-                                  .withValues(alpha: 0.12),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.delivery_dining,
-                              size: 48,
-                              color: AppTheme.primaryOrange,
-                            ),
-                          ),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryOrange.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.delivery_dining,
+                                  size: 48,
+                                  color: AppTheme.primaryOrange,
+                                ),
+                              ),
                         ),
                       ),
                     ),

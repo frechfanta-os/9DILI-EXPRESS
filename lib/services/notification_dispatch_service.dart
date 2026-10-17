@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
@@ -20,9 +21,12 @@ class NotificationDispatchService {
     String? baseUrl,
     FirebaseAuth? auth,
     http.Client? httpClient,
-  })  : baseUrl = (baseUrl ?? defaultDispatcherUrl).replaceAll(RegExp(r'/+$'), ''),
-        _customAuth = auth,
-        _httpClient = httpClient ?? http.Client();
+  }) : baseUrl = (baseUrl ?? defaultDispatcherUrl).replaceAll(
+         RegExp(r'/+$'),
+         '',
+       ),
+       _customAuth = auth,
+       _httpClient = httpClient ?? http.Client();
 
   FirebaseAuth get _auth => _customAuth ?? FirebaseAuth.instance;
 
@@ -33,16 +37,16 @@ class NotificationDispatchService {
       if (user == null) return null;
       return await user.getIdToken();
     } catch (e) {
-      debugPrint('NotificationDispatchService: échec récupération ID Token: $e');
+      debugPrint(
+        'NotificationDispatchService: échec récupération ID Token: $e',
+      );
       return null;
     }
   }
 
   /// Prépare les en-têtes d'authentification Bearer
   Future<Map<String, String>> _buildHeaders() async {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     final token = await _getIdToken();
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
@@ -84,17 +88,25 @@ class NotificationDispatchService {
       );
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        debugPrint('NotificationDispatchService: notification $eventType envoyée pour $errandId (${response.statusCode})');
+        debugPrint(
+          'NotificationDispatchService: notification $eventType envoyée pour $errandId (${response.statusCode})',
+        );
         return true;
       } else if (response.statusCode == 409) {
-        debugPrint('NotificationDispatchService: notification $eventType pour $errandId déjà en cours ou doublon (409) - ignoré.');
+        debugPrint(
+          'NotificationDispatchService: notification $eventType pour $errandId déjà en cours ou doublon (409) - ignoré.',
+        );
         return true;
       } else {
-        debugPrint('NotificationDispatchService: Worker a retourné le code ${response.statusCode}: ${response.body}');
+        debugPrint(
+          'NotificationDispatchService: Worker a retourné le code ${response.statusCode}: ${response.body}',
+        );
         return false;
       }
     } catch (e) {
-      debugPrint('NotificationDispatchService: échec réseau non-bloquant pour $eventType sur $errandId: $e');
+      debugPrint(
+        'NotificationDispatchService: échec réseau non-bloquant pour $eventType sur $errandId: $e',
+      );
       return false;
     }
   }
@@ -115,22 +127,26 @@ class NotificationDispatchService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else if (response.statusCode == 409) {
-        debugPrint('NotificationDispatchService: Radar dispatch déjà en cours ou terminé pour $errandId (409)');
+        debugPrint(
+          'NotificationDispatchService: Radar dispatch déjà en cours ou terminé pour $errandId (409)',
+        );
         return null;
       } else {
-        debugPrint('NotificationDispatchService: /api/radar/dispatch a échoué (${response.statusCode}): ${response.body}');
+        debugPrint(
+          'NotificationDispatchService: /api/radar/dispatch a échoué (${response.statusCode}): ${response.body}',
+        );
         return null;
       }
     } catch (e) {
-      debugPrint('NotificationDispatchService: Erreur réseau /api/radar/dispatch: $e');
+      debugPrint(
+        'NotificationDispatchService: Erreur réseau /api/radar/dispatch: $e',
+      );
       return null;
     }
   }
 
   /// Accepte une course candidate côté Shopper de manière atomique via le Worker.
-  Future<Map<String, dynamic>?> acceptRadar({
-    required String errandId,
-  }) async {
+  Future<Map<String, dynamic>?> acceptRadar({required String errandId}) async {
     final uri = Uri.parse('$baseUrl/api/radar/accept');
     try {
       final headers = await _buildHeaders();
@@ -143,19 +159,21 @@ class NotificationDispatchService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
-        debugPrint('NotificationDispatchService: /api/radar/accept a échoué (${response.statusCode}): ${response.body}');
+        debugPrint(
+          'NotificationDispatchService: /api/radar/accept a échoué (${response.statusCode}): ${response.body}',
+        );
         return null;
       }
     } catch (e) {
-      debugPrint('NotificationDispatchService: Erreur réseau /api/radar/accept: $e');
+      debugPrint(
+        'NotificationDispatchService: Erreur réseau /api/radar/accept: $e',
+      );
       return null;
     }
   }
 
   /// Décline une course candidate côté Shopper.
-  Future<bool> declineRadar({
-    required String errandId,
-  }) async {
+  Future<bool> declineRadar({required String errandId}) async {
     final uri = Uri.parse('$baseUrl/api/radar/decline');
     try {
       final headers = await _buildHeaders();
@@ -167,15 +185,15 @@ class NotificationDispatchService {
 
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {
-      debugPrint('NotificationDispatchService: Erreur réseau /api/radar/decline: $e');
+      debugPrint(
+        'NotificationDispatchService: Erreur réseau /api/radar/decline: $e',
+      );
       return false;
     }
   }
 
   /// Demande l'avancement immédiat vers la vague suivante du radar (fallback client si Cloudflare queue indisponible).
-  Future<Map<String, dynamic>?> nextWave({
-    required String errandId,
-  }) async {
+  Future<Map<String, dynamic>?> nextWave({required String errandId}) async {
     final uri = Uri.parse('$baseUrl/api/radar/next-wave');
     try {
       final headers = await _buildHeaders();
@@ -190,7 +208,9 @@ class NotificationDispatchService {
       }
       return null;
     } catch (e) {
-      debugPrint('NotificationDispatchService: Erreur réseau /api/radar/next-wave: $e');
+      debugPrint(
+        'NotificationDispatchService: Erreur réseau /api/radar/next-wave: $e',
+      );
       return null;
     }
   }
@@ -209,7 +229,9 @@ class NotificationDispatchService {
       }
       return null;
     } catch (e) {
-      debugPrint('NotificationDispatchService: Erreur réseau /api/radar/status: $e');
+      debugPrint(
+        'NotificationDispatchService: Erreur réseau /api/radar/status: $e',
+      );
       return null;
     }
   }

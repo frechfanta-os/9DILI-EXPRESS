@@ -160,13 +160,14 @@ class ErrandService {
 
     // Déclenchement non-bloquant de la notification et du radar intelligent
     if (_dispatchService != null) {
-      _dispatchService.notify(
-        errandId: actualId,
-        eventType: 'new_errand_available',
-      ).catchError((e) {
-        debugPrint('ErrandService: new_errand_available notification error: $e');
-        return false;
-      });
+      _dispatchService
+          .notify(errandId: actualId, eventType: 'new_errand_available')
+          .catchError((e) {
+            debugPrint(
+              'ErrandService: new_errand_available notification error: $e',
+            );
+            return false;
+          });
       _dispatchService.dispatchRadar(errandId: actualId).catchError((e) {
         debugPrint('ErrandService: dispatchRadar non-blocking error: $e');
         return null;
@@ -311,13 +312,12 @@ class ErrandService {
       'updatedAt': FieldValue.serverTimestamp(),
     });
     if (_dispatchService != null) {
-      _dispatchService.notify(
-        errandId: errandId,
-        eventType: 'errand_accepted',
-      ).catchError((e) {
-        debugPrint('ErrandService: errand_accepted notification error: $e');
-        return false;
-      });
+      _dispatchService
+          .notify(errandId: errandId, eventType: 'errand_accepted')
+          .catchError((e) {
+            debugPrint('ErrandService: errand_accepted notification error: $e');
+            return false;
+          });
     }
     return true;
   }
@@ -339,13 +339,14 @@ class ErrandService {
     }
     await updateErrandStatus(errandId, ErrandStatus.delivering);
     if (_dispatchService != null) {
-      _dispatchService.notify(
-        errandId: errandId,
-        eventType: 'shopper_delivering',
-      ).catchError((e) {
-        debugPrint('ErrandService: shopper_delivering notification error: $e');
-        return false;
-      });
+      _dispatchService
+          .notify(errandId: errandId, eventType: 'shopper_delivering')
+          .catchError((e) {
+            debugPrint(
+              'ErrandService: shopper_delivering notification error: $e',
+            );
+            return false;
+          });
     }
     return true;
   }
@@ -397,13 +398,14 @@ class ErrandService {
       });
       await _pinCacheService.clearPin(errandId);
       if (_dispatchService != null) {
-        _dispatchService.notify(
-          errandId: errandId,
-          eventType: 'errand_completed',
-        ).catchError((e) {
-          debugPrint('ErrandService: errand_completed notification error: $e');
-          return false;
-        });
+        _dispatchService
+            .notify(errandId: errandId, eventType: 'errand_completed')
+            .catchError((e) {
+              debugPrint(
+                'ErrandService: errand_completed notification error: $e',
+              );
+              return false;
+            });
       }
       return PinValidationResult.success();
     } else {
@@ -548,13 +550,12 @@ class ErrandService {
     await batch.commit();
 
     if (_dispatchService != null) {
-      _dispatchService.notify(
-        errandId: errandId,
-        eventType: 'bid_accepted',
-      ).catchError((e) {
-        debugPrint('ErrandService: bid_accepted notification error: $e');
-        return false;
-      });
+      _dispatchService
+          .notify(errandId: errandId, eventType: 'bid_accepted')
+          .catchError((e) {
+            debugPrint('ErrandService: bid_accepted notification error: $e');
+            return false;
+          });
     }
   }
 
@@ -654,13 +655,12 @@ class ErrandService {
     });
 
     if (result && _dispatchService != null) {
-      _dispatchService.notify(
-        errandId: errandId,
-        eventType: 'errand_accepted',
-      ).catchError((e) {
-        debugPrint('ErrandService: errand_accepted notification error: $e');
-        return false;
-      });
+      _dispatchService
+          .notify(errandId: errandId, eventType: 'errand_accepted')
+          .catchError((e) {
+            debugPrint('ErrandService: errand_accepted notification error: $e');
+            return false;
+          });
     }
 
     return result;
@@ -723,7 +723,10 @@ class ErrandService {
       }
 
       // Contrôle de transition légitime
-      if (!ErrandStatus.isValidTransition(currentStatus, ErrandStatus.cancelled)) {
+      if (!ErrandStatus.isValidTransition(
+        currentStatus,
+        ErrandStatus.cancelled,
+      )) {
         throw StateError(
           "invalid_transition: Impossible d'annuler une course au statut '$currentStatus'.",
         );
@@ -739,13 +742,14 @@ class ErrandService {
     });
 
     if (_dispatchService != null) {
-      _dispatchService.notify(
-        errandId: errandId,
-        eventType: 'errand_cancelled',
-      ).catchError((e) {
-        debugPrint('ErrandService: errand_cancelled notification error: $e');
-        return false;
-      });
+      _dispatchService
+          .notify(errandId: errandId, eventType: 'errand_cancelled')
+          .catchError((e) {
+            debugPrint(
+              'ErrandService: errand_cancelled notification error: $e',
+            );
+            return false;
+          });
     }
   }
 }

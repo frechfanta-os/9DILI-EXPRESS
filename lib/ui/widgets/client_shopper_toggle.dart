@@ -25,10 +25,13 @@ class ClientShopperToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isClient ? AppTheme.clientGreen : AppTheme.shopperOrange;
+    final activeColor = isClient
+        ? AppTheme.clientGreen
+        : AppTheme.shopperOrange;
 
     return Semantics(
-      label: 'Sélecteur de mode : ${isClient ? "Client actif" : "Shopper actif"}',
+      label:
+          'Sélecteur de mode : ${isClient ? "Client actif" : "Shopper actif"}',
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: AnimatedContainer(
@@ -54,7 +57,9 @@ class ClientShopperToggle extends StatelessWidget {
               AnimatedAlign(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOutCubic,
-                alignment: isClient ? Alignment.centerLeft : Alignment.centerRight,
+                alignment: isClient
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight,
                 child: FractionallySizedBox(
                   widthFactor: 0.5,
                   heightFactor: 1.0,
@@ -106,8 +111,12 @@ class ClientShopperToggle extends StatelessWidget {
                               Text(
                                 'Client',
                                 style: TextStyle(
-                                  color: isClient ? AppTheme.clientGreen : Colors.white,
-                                  fontWeight: isClient ? FontWeight.bold : FontWeight.w600,
+                                  color: isClient
+                                      ? AppTheme.clientGreen
+                                      : Colors.white,
+                                  fontWeight: isClient
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
                                   fontSize: 15,
                                   letterSpacing: 0.2,
                                 ),
@@ -148,8 +157,12 @@ class ClientShopperToggle extends StatelessWidget {
                               Text(
                                 'Shopper',
                                 style: TextStyle(
-                                  color: !isClient ? AppTheme.shopperOrange : Colors.white,
-                                  fontWeight: !isClient ? FontWeight.bold : FontWeight.w600,
+                                  color: !isClient
+                                      ? AppTheme.shopperOrange
+                                      : Colors.white,
+                                  fontWeight: !isClient
+                                      ? FontWeight.bold
+                                      : FontWeight.w600,
                                   fontSize: 15,
                                   letterSpacing: 0.2,
                                 ),

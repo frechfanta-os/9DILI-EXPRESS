@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Modes de navigation et d'interface de l'application 9DILI EXPRESS.
-enum AppMode {
-  client,
-  shopper,
-}
+enum AppMode { client, shopper }
 
 /// Thème visuel officiel 9DILI EXPRESS — Stitch UI/UX V2.
 /// - Mode Client  : Vert Émeraude (#10B981) — Focus catalogue, panier, courses
@@ -15,8 +12,12 @@ enum AppMode {
 /// - Cartes arrondies (r=18)
 class AppTheme {
   // Couleurs principales par mode
-  static const Color clientGreen = Color(0xFF10B981); // Vert officiel Mode Client
-  static const Color shopperOrange = Color(0xFFFF6D00); // Orange officiel Mode Shopper
+  static const Color clientGreen = Color(
+    0xFF10B981,
+  ); // Vert officiel Mode Client
+  static const Color shopperOrange = Color(
+    0xFFFF6D00,
+  ); // Orange officiel Mode Shopper
 
   // Rétrocompatibilité
   static const Color primaryOrange = shopperOrange;
