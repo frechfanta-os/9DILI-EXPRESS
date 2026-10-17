@@ -71,5 +71,62 @@ void main() {
       expect(destinationBytes.isNotEmpty, isTrue);
       expect(destinationBytes.sublist(0, 4), equals([0x89, 0x50, 0x4E, 0x47]));
     });
+
+    testWidgets('Rendu du Shopper3DMarkerWidget avec fallback', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Shopper3DMarkerWidget(
+              heading: 90.0,
+              size: 54.0,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Shopper3DMarkerWidget), findsOneWidget);
+    });
+
+    testWidgets('Rendu du ClientDestination3DMarkerWidget avec adresse et fallback', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ClientDestination3DMarkerWidget(
+              addressSnippet: 'Bab El Oued, Alger',
+              size: 54.0,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(ClientDestination3DMarkerWidget), findsOneWidget);
+      expect(find.text('Bab El Oued, Alger'), findsOneWidget);
+    });
+
+    testWidgets('Rendu du Store3DMarkerWidget avec enseigne et fallback', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Store3DMarkerWidget(
+              storeName: 'Supérette Didouche',
+              size: 54.0,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(Store3DMarkerWidget), findsOneWidget);
+      expect(find.text('Supérette Didouche'), findsOneWidget);
+    });
+
+    test('loadAssetMarkerBytes charge un PNG valide ou bascule sur fallback', () async {
+      final bytes = await MapMarkerBitmapGenerator.loadAssetMarkerBytes(
+        MapMarkerAssets.shopperOrange3D01,
+        isShopper: true,
+      );
+      expect(bytes.isNotEmpty, isTrue);
+      // Signature magique PNG
+      expect(bytes.sublist(0, 4), equals([0x89, 0x50, 0x4E, 0x47]));
+    });
   });
 }

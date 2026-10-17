@@ -1,0 +1,9 @@
+# Dependency directories
+node_modules/
+
+# Wrangler local artifacts and cache
+.wrangler/
+.dev.vars
+
+# Build output
+dist/

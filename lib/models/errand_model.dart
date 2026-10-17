@@ -47,6 +47,7 @@ class ErrandModel {
   final String storeName;
   final String deliveryAddress;
   final GeoPoint? deliveryGeoPoint;
+  final GeoPoint? storeGeoPoint; // Coordonnées du commerce / point de collecte
   final double estimatedBudget;
   final double? ticketAmount;
   final double negotiatedCommission;
@@ -75,6 +76,7 @@ class ErrandModel {
     required this.storeName,
     required this.deliveryAddress,
     this.deliveryGeoPoint,
+    this.storeGeoPoint,
     required this.estimatedBudget,
     this.ticketAmount,
     this.negotiatedCommission = 0.0,
@@ -168,6 +170,9 @@ class ErrandModel {
           ? addressStr
           : (data['deliveryAddressText'] ?? ''),
       deliveryGeoPoint: addressGeo,
+      storeGeoPoint: data['storeGeoPoint'] is GeoPoint
+          ? data['storeGeoPoint'] as GeoPoint
+          : null,
       estimatedBudget: (data['estimatedBudget'] as num?)?.toDouble() ?? 0.0,
       ticketAmount: (data['ticketAmount'] as num?)?.toDouble(),
       negotiatedCommission:
@@ -219,6 +224,7 @@ class ErrandModel {
       'storeName': storeName,
       'deliveryAddress': deliveryAddress,
       if (deliveryGeoPoint != null) 'deliveryGeoPoint': deliveryGeoPoint,
+      if (storeGeoPoint != null) 'storeGeoPoint': storeGeoPoint,
       'estimatedBudget': estimatedBudget,
       'ticketAmount': ticketAmount,
       'negotiatedCommission': negotiatedCommission,
@@ -253,6 +259,7 @@ class ErrandModel {
     String? storeName,
     String? deliveryAddress,
     GeoPoint? deliveryGeoPoint,
+    GeoPoint? storeGeoPoint,
     double? estimatedBudget,
     double? ticketAmount,
     double? negotiatedCommission,
@@ -281,6 +288,7 @@ class ErrandModel {
       storeName: storeName ?? this.storeName,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
       deliveryGeoPoint: deliveryGeoPoint ?? this.deliveryGeoPoint,
+      storeGeoPoint: storeGeoPoint ?? this.storeGeoPoint,
       estimatedBudget: estimatedBudget ?? this.estimatedBudget,
       ticketAmount: ticketAmount ?? this.ticketAmount,
       negotiatedCommission: negotiatedCommission ?? this.negotiatedCommission,

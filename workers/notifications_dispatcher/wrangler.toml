@@ -1,0 +1,29 @@
+name = "dili-express-notifications-dispatcher"
+main = "src/index.js"
+compatibility_date = "2024-04-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "dili-express"
+ENVIRONMENT = "production"
+
+# NOTE DE SÉCURITÉ ABSOLUE :
+# Ne JAMAIS committer de clé de service ou secret dans ce fichier.
+# Le secret de production doit être injecté via la commande sécurisée Wrangler :
+#   npx wrangler secret put FIREBASE_SERVICE_ACCOUNT
+# Le secret attendu est la chaîne JSON du compte de service Google (avec client_email et private_key).
+
+[triggers]
+crons = ["* * * * *"]
+
+# Configuration Cloudflare Queues pour l'ordonnancement différé à 15s des vagues radar
+# Nécessite l'activation de Cloudflare Queues sur le compte Cloudflare (Workers Paid ou add-on Queues).
+[[queues.producers]]
+binding = "RADAR_QUEUE"
+queue = "dili-express-radar-queue"
+
+[[queues.consumers]]
+queue = "dili-express-radar-queue"
+max_batch_size = 5
+max_batch_timeout = 5
+max_retries = 3
+dead_letter_queue = "dili-express-radar-dlq"

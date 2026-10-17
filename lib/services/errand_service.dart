@@ -497,4 +497,97 @@ class ErrandService {
       (s) => s.docs.map((d) => ErrandBidModel.fromFirestore(d)).toList(),
     );
   }
+
+  // ==========================================
+  // 4. ATTRIBUTION ATOMIQUE DU RADAR & REFUS
+  // ==========================================
+
+  /// Attribution exclusive et atomique d'une course à un shoppeur via transaction Firestore.
+  /// Garantit qu'un seul shoppeur parmi des requêtes concurrentes simultanées obtient la course.
+  /// Rejette les concurrents avec StateError('already_assigned').
+  /// Idempotent : Si le shoppeur appelant est déjà le gagnant, retourne true sans erreur.
+  /// Garde de sécurité : Interdit expressément au créateur de s'auto-attribuer sa propre course.
+  ///
+  /// RÉCONCILIATION ARCHITECTURALE & RÈGLES DE SÉCURITÉ FIRESTORE :
+  /// - En production, les règles de sécurité Firestore locales (`firestore.rules`)
+  ///   restreignent les écritures aux seuls créateurs (`clientId == request.auth.uid`)
+  ///   ou commissionnaires déjà assignés (`shopperId == request.auth.uid`).
+  /// - Un commissionnaire tiers non assigné ne peut donc PAS s'auto-attribuer
+  ///   directement une course via le SDK client Firestore (rejet `PERMISSION_DENIED`).
+  /// - Pour les commissionnaires candidats du Radar, l'attribution autorisée passe
+  ///   exclusivement par l'endpoint sécurisé du Worker Cloudflare `/api/radar/accept`,
+  ///   qui authentifie le demandeur par jeton Firebase Auth et exécute la mutation
+  ///   atomique sous privilège de compte de service avec précondition `updateTime`.
+  /// - Cette méthode client `assignShopperAtomic` demeure le composant de référence
+  ///   pour les attributions directes autorisées (ex: confirmation par le client créateur,
+  ///   ou bancs de tests unitaires/locaux).
+  Future<bool> assignShopperAtomic({
+    required String errandId,
+    required String shopperId,
+    double? agreedCommission,
+  }) async {
+    return await _firestore.runTransaction<bool>((transaction) async {
+      final docRef = _errandsRef.doc(errandId);
+      final snapshot = await transaction.get(docRef);
+
+      if (!snapshot.exists || snapshot.data() == null) {
+        throw StateError("Course introuvable: $errandId");
+      }
+
+      final data = snapshot.data()!;
+      final currentClientId = data['clientId'];
+      final currentShopper = data['shopperId'];
+      final currentStatus = data['status'];
+
+      // Garde stricte : Le créateur ne peut en aucun cas s'auto-attribuer sa propre course
+      if (currentClientId != null && currentClientId == shopperId) {
+        throw StateError(
+          "cannot_assign_own_errand: Le créateur de la course ne peut pas s'auto-attribuer sa propre course.",
+        );
+      }
+
+      // Idempotence confirmée : déjà attribuée à cet utilisateur
+      if (currentShopper == shopperId) {
+        return true;
+      }
+
+      // Concurrence : déjà prise par un tiers
+      if (currentShopper != null && currentShopper.toString().isNotEmpty) {
+        throw StateError(
+          "already_assigned: Cette course a déjà été attribuée à un autre shoppeur.",
+        );
+      }
+
+      // Machine d'état : doit être pending
+      if (currentStatus != ErrandStatus.pending) {
+        throw StateError(
+          "errand_not_available: La course est au statut '$currentStatus' et ne peut plus être acceptée.",
+        );
+      }
+
+      final updateData = <String, dynamic>{
+        'shopperId': shopperId,
+        'status': ErrandStatus.accepted,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (agreedCommission != null) {
+        updateData['negotiatedCommission'] = agreedCommission;
+      }
+
+      transaction.update(docRef, updateData);
+      return true;
+    });
+  }
+
+  /// Enregistre le refus individuel d'un shoppeur pour une course.
+  /// Exclut le shoppeur des vagues ultérieures sans modifier la course pour les autres.
+  Future<void> declineErrand({
+    required String errandId,
+    required String shopperId,
+  }) async {
+    await _errandsRef.doc(errandId).update({
+      'declinedShoppers': FieldValue.arrayUnion([shopperId]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 }

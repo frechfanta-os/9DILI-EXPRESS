@@ -1,0 +1,24 @@
+{
+  "name": "dili-express-notifications-dispatcher",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker orchestrateur des notifications FCM pour 9DILI EXPRESS sans Cloud Functions",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "firebase",
+    "fcm",
+    "notifications"
+  ],
+  "author": "GHD Interactive Studio",
+  "license": "UNLICENSED",
+  "private": true,
+  "devDependencies": {
+    "wrangler": "^4.151.1"
+  }
+}
